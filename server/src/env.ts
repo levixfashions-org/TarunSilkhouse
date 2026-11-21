@@ -1,6 +1,9 @@
 import 'dotenv/config';
 import { z } from 'zod';
 
+// Hosting panels often save an empty field as "" — treat that as "not set".
+const num = (d: number) => z.preprocess((v) => (v === '' || v === undefined ? undefined : v), z.coerce.number().int().positive().default(d));
+
 const bool = z
   .string()
   .optional()
@@ -8,7 +11,7 @@ const bool = z
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.coerce.number().default(3000),
+  PORT: num(3000),
   PUBLIC_URL: z.string().url().default('http://localhost:3000'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   CORS_ORIGINS: z.string().default(''),
@@ -33,7 +36,7 @@ const schema = z.object({
 
   // Email (SMTP — Hostinger mail works: smtp.hostinger.com:465)
   SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.coerce.number().default(465),
+  SMTP_PORT: num(465),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   MAIL_FROM: z.string().default('Tarun Silks <orders@example.com>'),

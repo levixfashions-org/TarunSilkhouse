@@ -21,8 +21,8 @@ if (env.FIREBASE_PROJECT_ID && env.FIREBASE_CLIENT_EMAIL && env.FIREBASE_PRIVATE
       credential: cert({
         projectId: env.FIREBASE_PROJECT_ID,
         clientEmail: env.FIREBASE_CLIENT_EMAIL,
-        // Hostinger env panels store newlines as "\n" — restore them.
-        privateKey: env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        // Works however it was pasted: with or without surrounding quotes, with "\n" or real line breaks.
+        privateKey: env.FIREBASE_PRIVATE_KEY.trim().replace(/^["']|["']$/g, '').replace(/\\n/g, '\n'),
       }),
     });
   }
