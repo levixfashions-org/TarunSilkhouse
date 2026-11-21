@@ -323,3 +323,41 @@
   animation-duration: 0.7s;
   animation-timing-function: var(--ease);
 }
+
+/* ---------- Arch ("igloo") frames — temple-arch silhouettes used across the store ---------- */
+.arch {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 9999px 9999px 14px 14px; /* top becomes a perfect half-circle at any width */
+  -webkit-mask-image: -webkit-radial-gradient(white, black); /* Safari: keep the curve while children transform */
+}
+.arch-line::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  bottom: 7px;
+  left: 7px;
+  border: 1px solid rgb(201 154 69 / 0.8);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+}
+@keyframes arch-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -12px, 0);
+  }
+}
+.arch-float {
+  animation: arch-float 7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .arch-float {
+    animation-duration: 20s;
+  }
+}

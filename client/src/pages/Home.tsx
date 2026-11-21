@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CardSkeleton, ProductCard } from '@/components/ProductCard';
 import { Draw, Kalga, Kolam, Lotus, Peacock, TempleBorder } from '@/components/Ornaments';
+import { ArchImage, ArchZari } from '@/components/Arch';
 import { EASE, Framed, Magnetic, Reveal } from '@/components/ui';
 import { cached, post } from '@/lib/api';
 import { gpuTier } from '@/lib/device';
@@ -21,6 +22,64 @@ const lines = (title: string | null | undefined, fallback: string[]) => {
 };
 
 /* ------------------------------------------------------------------ hero */
+/** Three temple-arch windows floating over the silk — the centre one taller — each showing a saree. */
+function HeroArches() {
+  const cols = useBoot((b) => b.boot?.collections ?? []);
+  const imgs = cols.filter((c) => c.image && !c.isEditorial).slice(0, 3);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = box.current;
+    if (!el || matchMedia('(hover: none)').matches) return;
+    let raf = 0;
+    const move = (e: PointerEvent) => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const x = e.clientX / innerWidth - 0.5;
+        const y = e.clientY / innerHeight - 0.5;
+        el.querySelectorAll<HTMLElement>('[data-depth]').forEach((n) => {
+          const k = Number(n.dataset.depth);
+          n.style.transform = `translate3d(${x * k * 30}px, ${y * k * 18}px, 0) rotateY(${x * k * 6}deg)`;
+        });
+      });
+    };
+    window.addEventListener('pointermove', move, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', move);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+  if (!imgs.length) return null;
+  const order = imgs.length === 3 ? [imgs[1], imgs[0], imgs[2]] : imgs; // the first collection sits in the middle
+  return (
+    <div ref={box} className="relative mt-6 flex items-end justify-center gap-3 opacity-0 transition-opacity delay-500 duration-1200 sm:gap-5 md:mt-8 [.is-in_&]:opacity-100" style={{ perspective: 900 }} aria-hidden>
+      {order.map((c, i) => {
+        const middle = order.length === 3 ? i === 1 : i === 0;
+        return (
+          <Link
+            key={c.handle}
+            to={`/collections/${c.handle}`}
+            tabIndex={-1}
+            className="pointer-events-auto block transition-transform duration-900 ease-silk"
+            data-depth={middle ? 1 : 0.55}
+            data-cursor="view"
+            data-cursor-label={c.title}
+          >
+            <div className="arch-float" style={{ animationDelay: `${i * -2.3}s` }}>
+              <ArchImage
+                url={c.image}
+                alt={c.title}
+                sizes="20vw"
+                className={middle ? 'h-[30svh] w-[19svh] max-w-[34vw] md:h-[38vh] md:w-[24vh]' : 'h-[24svh] w-[15svh] max-w-[27vw] md:h-[31vh] md:w-[19.5vh]'}
+              />
+            </div>
+          </Link>
+        );
+      })}
+      <div className="pointer-events-none absolute -bottom-6 left-1/2 h-10 w-[120%] -translate-x-1/2 rounded-[50%] bg-black/45 blur-2xl" />
+    </div>
+  );
+}
+
 function Hero({ sec }: { sec: HomeSection }) {
   const d = sec.data;
   const [mode, setMode] = useState<'pending' | 'gl' | 'fallback'>('pending');
@@ -67,9 +126,9 @@ function Hero({ sec }: { sec: HomeSection }) {
       )}
       <div className="pointer-events-none absolute left-0 top-0 h-full w-full bg-gradient-to-b from-[#1B0A0E]/50 via-transparent to-[#1B0A0E]/70" />
 
-      <div ref={textRef} className="page-x relative flex h-full flex-col justify-end pb-[calc(var(--tabbar-h)+40px)] md:justify-center md:pb-0">
-        <p className="mb-6 max-w-xs text-[15px] text-[#FBF7F0]/80 opacity-0 transition-opacity delay-700 duration-1200 [.is-in_&]:opacity-100">{s(d.eyebrow, '')}</p>
-        <h1 className="font-serif text-d-1">
+      <div ref={textRef} className="page-x relative flex h-full flex-col items-center justify-center pb-[calc(var(--tabbar-h)+28px)] pt-[calc(var(--header-h)+8px)] text-center md:pb-12">
+        <p className="mb-3 text-[13px] tracking-wide text-[#FBF7F0]/75 opacity-0 transition-opacity delay-700 duration-1200 md:text-[15px] [.is-in_&]:opacity-100">{s(d.eyebrow, '')}</p>
+        <h1 className="font-serif text-[clamp(2.7rem,7.4vw,6.4rem)] leading-[0.92] tracking-[-0.02em]">
           <span className="mask-line">
             <span>{s(d.line1, 'Six yards')}</span>
           </span>
@@ -77,7 +136,8 @@ function Hero({ sec }: { sec: HomeSection }) {
             <span className="italic text-[#E6C27A]">{s(d.line2, 'of poetry.')}</span>
           </span>
         </h1>
-        <div className="mt-10 flex flex-wrap items-center gap-4 opacity-0 transition-opacity delay-1000 duration-1200 [.is-in_&]:opacity-100">
+        <HeroArches />
+        <div className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 opacity-0 transition-opacity delay-1000 duration-1200 md:mt-9 [.is-in_&]:opacity-100">
           <Magnetic>
             <Link to={s(d.ctaLink, '/shop')} className="btn-gold pointer-events-auto px-8" data-cursor="view" data-cursor-label="Enter">
               {s(d.cta, 'Explore the collection')}
@@ -246,7 +306,7 @@ function Collections({ sec }: { sec: HomeSection }) {
             <Link
               key={c.handle}
               to={`/collections/${c.handle}`}
-              className="group relative w-[74vw] shrink-0 snap-start overflow-hidden rounded-[22px] sm:w-[46vw] md:h-[62vh] md:w-[34vh]"
+              className="arch arch-line group relative w-[64vw] shrink-0 snap-start sm:w-[40vw] md:h-[62vh] md:w-[34vh]"
               data-cursor="view"
               data-cursor-label="Open"
             >
@@ -260,9 +320,10 @@ function Collections({ sec }: { sec: HomeSection }) {
                   style={{ backgroundImage: c.image ? `url(${c.image.split('#')[0].replace('main.webp', 'zoom.webp')})` : undefined, backgroundSize: '260%', backgroundPosition: '50% 30%' }}
                 />
               </div>
-              <div className="pointer-events-none absolute left-0 top-0 h-full w-full bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-              <div className="absolute bottom-0 left-0 w-full p-5">
-                <p className="font-serif text-[2.2rem] italic leading-none">{c.title}</p>
+              <div className="pointer-events-none absolute left-0 top-0 z-[1] h-full w-full bg-gradient-to-t from-black/70 via-black/5 to-transparent" />
+              <ArchZari className="!h-[11%]" />
+              <div className="absolute bottom-[12%] left-0 z-[2] w-full p-5 text-center">
+                <p className="font-serif text-[2rem] italic leading-none">{c.title}</p>
               </div>
             </Link>
           ))}
@@ -418,8 +479,10 @@ function Edits({ sec }: { sec: HomeSection }) {
       <div className="grid gap-6 md:grid-cols-12 md:gap-8">
         {a && (
           <Link to={`/edits/${a.handle}`} className="group relative md:col-span-7 md:row-span-2" data-cursor="view">
-            <Framed url={a.image} alt={a.title} sizes="(min-width:768px) 58vw, 100vw" className="rounded-[26px]" imgClassName="group-hover:scale-[1.03]" />
-            <div className="absolute bottom-0 left-0 w-full rounded-b-[26px] bg-gradient-to-t from-black/60 to-transparent p-6 text-[#FBF7F0] md:p-10">
+            <div className="arch arch-line mx-auto max-w-[560px]">
+              <Framed url={a.image} alt={a.title} sizes="(min-width:768px) 40vw, 100vw" imgClassName="group-hover:scale-[1.03]" />
+            </div>
+            <div className="absolute bottom-0 left-1/2 w-full max-w-[560px] -translate-x-1/2 rounded-b-[14px] bg-gradient-to-t from-black/60 to-transparent p-6 text-center text-[#FBF7F0] md:p-10">
               <p className="font-serif text-d-3 italic">{a.title}</p>
             </div>
           </Link>
@@ -434,7 +497,9 @@ function Edits({ sec }: { sec: HomeSection }) {
         <div className="grid grid-cols-2 gap-6 md:col-span-5">
           {[b, c].filter(Boolean).map((x) => (
             <Link key={x!.handle} to={`/edits/${x!.handle}`} className="group" data-cursor="view">
-              <Framed url={x!.image} alt={x!.title} sizes="25vw" className="rounded-[20px]" imgClassName="group-hover:scale-[1.04]" />
+              <div className="arch arch-line">
+                <Framed url={x!.image} alt={x!.title} sizes="25vw" imgClassName="group-hover:scale-[1.04]" />
+              </div>
               <p className="mt-3 font-serif text-xl">{x!.title}</p>
             </Link>
           ))}

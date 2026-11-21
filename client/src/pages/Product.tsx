@@ -19,7 +19,7 @@ const DrapeViewer = lazy(() => import('@/three/DrapeViewer'));
 type Data = { product: P; related: Card[]; completeTheLook: Card[]; reviews: Review[]; rating: { avg: number | null; count: number } };
 
 /** Press-and-hold (or hover on desktop) magnifier that follows the pointer. */
-function WeaveZoom({ url, alt, priority, vtName }: { url: string; alt: string; priority?: boolean; vtName?: string }) {
+function WeaveZoom({ url, alt, priority, vtName, arch = true }: { url: string; alt: string; priority?: boolean; vtName?: string; arch?: boolean }) {
   const [lens, setLens] = useState<{ x: number; y: number } | null>(null);
   const hold = useRef<ReturnType<typeof setTimeout> | null>(null);
   const zoom = variant(parseFrame(url).src, 'zoom');
@@ -29,7 +29,7 @@ function WeaveZoom({ url, alt, priority, vtName }: { url: string; alt: string; p
   };
   return (
     <div
-      className="relative select-none overflow-hidden rounded-card"
+      className={`relative select-none ${arch ? 'arch arch-line' : 'overflow-hidden rounded-card'}`}
       style={{ touchAction: lens ? 'none' : 'pan-y' }}
       onPointerDown={(e) => {
         const p = pos(e);
@@ -344,7 +344,7 @@ export default function Product() {
               {/* desktop: large grid */}
               <div className="hidden grid-cols-2 gap-4 md:grid">
                 {images.map((im, i) => (
-                  <div key={im.url} className={i === 0 ? 'col-span-2' : ''}>
+                  <div key={im.url} className={i === 0 ? 'col-span-2 mx-auto w-full max-w-[560px]' : ''}>
                     <WeaveZoom url={im.url} alt={im.alt} priority={i === 0} vtName={i === 0 ? 'product-hero' : undefined} />
                   </div>
                 ))}
@@ -362,7 +362,9 @@ export default function Product() {
               <div className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto">
                 {detailRail.map((im) => (
                   <div key={im.url} className="w-40 shrink-0 snap-start">
-                    <Framed url={im.url} alt={im.alt} sizes="160px" className="rounded-xl" />
+                    <div className="arch arch-line">
+                      <Framed url={im.url} alt={im.alt} sizes="160px" />
+                    </div>
                     <p className="mt-1 text-[13px] text-muted">{im.tag === 'DETAIL' ? 'Weave detail' : 'Pallu'}</p>
                   </div>
                 ))}

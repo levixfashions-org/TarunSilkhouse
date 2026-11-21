@@ -135,7 +135,7 @@ export function ProductCard({ p, priority = false, sizes }: { p: Card; priority?
           ref={tiltRef}
           onPointerMove={onMove}
           onPointerLeave={onLeave}
-          className="relative overflow-hidden rounded-card transition-transform duration-600 ease-silk will-change-transform"
+          className="arch arch-line transition-transform duration-600 ease-silk will-change-transform"
           style={{ transformStyle: 'preserve-3d' }}
         >
           {/* swipeable photos on touch */}
@@ -156,7 +156,7 @@ export function ProductCard({ p, priority = false, sizes }: { p: Card; priority?
             className="pointer-events-none absolute left-0 top-0 h-full w-full opacity-0 transition-opacity duration-600 group-hover:opacity-100"
             style={{ background: 'radial-gradient(circle at var(--hx,50%) var(--hy,50%), rgba(255,240,210,.28), transparent 45%)' }}
           />
-          <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
+          <div className="absolute left-1/2 top-[16%] z-[4] flex -translate-x-1/2 flex-col items-center gap-1.5">
             {p.soldOut ? (
               <span className="rounded-full bg-ink px-3 py-1 text-[12px] text-ivory">Sold out</span>
             ) : p.lowStock ? (
@@ -167,7 +167,7 @@ export function ProductCard({ p, priority = false, sizes }: { p: Card; priority?
             {p.handloomMark && <span className="rounded-full bg-gold/95 px-3 py-1 text-[12px] text-[#1B1612]">Handloom</span>}
           </div>
           {imgs.length > 1 && (
-            <div className="absolute bottom-3 left-0 flex w-full justify-center gap-1 md:hidden">
+            <div className="absolute bottom-4 left-0 z-[4] flex w-full justify-center gap-1 md:hidden">
               {imgs.slice(0, 4).map((_, i) => (
                 <span key={i} className={`h-1 rounded-full bg-ivory transition-all ${i === idx ? 'w-4' : 'w-1 opacity-60'}`} />
               ))}
@@ -219,7 +219,7 @@ export function ProductCard({ p, priority = false, sizes }: { p: Card; priority?
 export function CardSkeleton() {
   return (
     <div>
-      <div className="frame skeleton rounded-card" />
+      <div className="arch frame skeleton" />
       <div className="skeleton mt-3 h-4 w-1/3 rounded" />
       <div className="skeleton mt-2 h-5 w-2/3 rounded" />
     </div>
