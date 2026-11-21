@@ -33,6 +33,19 @@ if (env.FIREBASE_PROJECT_ID && env.FIREBASE_CLIENT_EMAIL && env.FIREBASE_PRIVATE
 
 type Claims = { uid: string; email?: string; phone?: string; name?: string };
 
+/** Team admins added from Admin → Team (stored in Setting "team"), cached for 30 s. */
+let teamCache: { at: number; emails: string[] } | null = null;
+export async function teamEmails(): Promise<string[]> {
+  if (teamCache && Date.now() - teamCache.at < 30_000) return teamCache.emails;
+  const row = await prisma.setting.findUnique({ where: { key: 'team' } }).catch(() => null);
+  const emails = Array.isArray((row?.value as { emails?: unknown } | null)?.emails) ? ((row!.value as { emails: string[] }).emails) : [];
+  teamCache = { at: Date.now(), emails: emails.map((e) => String(e).toLowerCase()) };
+  return teamCache.emails;
+}
+export const clearTeamCache = () => {
+  teamCache = null;
+};
+
 async function verify(token: string): Promise<Claims | null> {
   if (devAuthBypass && token.startsWith('dev:')) {
     // Local testing only: "dev:someone@example.com". Disabled in production.
@@ -56,7 +69,7 @@ export async function attachUser(req: Request, _res: Response, next: NextFunctio
   try {
     const claims = await verify(h.slice(7));
     if (!claims) return next();
-    const isAdmin = !!claims.email && adminEmails.includes(claims.email);
+    const isAdmin = !!claims.email && (adminEmails.includes(claims.email) || (await teamEmails()).includes(claims.email));
     const user = await prisma.user.upsert({
       where: { firebaseUid: claims.uid },
       create: {

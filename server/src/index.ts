@@ -19,6 +19,7 @@ import { account } from './routes/account.ts';
 import { adminCatalog } from './routes/admin/catalog.ts';
 import { adminOrders } from './routes/admin/orders.ts';
 import { adminStore } from './routes/admin/store.ts';
+import { adminSetup } from './routes/admin/setup.ts';
 import { catalog } from './routes/catalog.ts';
 import { checkout, razorpayWebhook } from './routes/checkout.ts';
 import { misc } from './routes/misc.ts';
@@ -112,7 +113,7 @@ app.use('/api', catalog);
 app.use('/api', checkout);
 app.use('/api', misc);
 app.use('/api/account', account);
-app.use('/api/admin', requireAdmin, adminOrders, adminCatalog, adminStore);
+app.use('/api/admin', requireAdmin, adminOrders, adminCatalog, adminStore, adminSetup);
 app.use('/api', (_req, res) => res.status(404).json({ error: { message: 'Not found', code: 'not_found' } }));
 
 // Uploaded images: immutable (every upload gets a new random folder), cache for a year.

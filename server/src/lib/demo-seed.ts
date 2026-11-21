@@ -320,6 +320,9 @@ const SAREES: {
   },
 ];
 
+/** URL slugs of the 12 starter sarees, used by Admin → Settings → "Remove sample sarees". */
+export const SAMPLE_SLUGS = SAREES.map((s) => s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-$/, ''));
+
 const CATEGORIES = ['Kanjivaram', 'Banarasi', 'Paithani', 'Chanderi', 'Linen', 'Cotton', 'Gadwal', 'Pochampally', 'Soft Silk', 'Tussar', 'Organza'];
 
 /** Loads the starter store. Skips if products exist (unless force). Returns true if it seeded. */

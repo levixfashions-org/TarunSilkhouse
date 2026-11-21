@@ -106,3 +106,25 @@ export async function storeImage(buf: Buffer, opts: { keepOriginalQuality?: bool
     mime: `image/${kind}`,
   };
 }
+
+/** Detect a video by its first bytes. */
+export function sniffVideo(buf: Buffer): 'mp4' | 'webm' | 'mov' | null {
+  if (buf.length < 12) return null;
+  if (buf.readUInt32BE(0) === 0x1a45dfa3) return 'webm';
+  if (buf.toString('ascii', 4, 8) === 'ftyp') {
+    const brand = buf.toString('ascii', 8, 12);
+    if (brand === 'qt  ') return 'mov';
+    if (['isom', 'iso2', 'iso5', 'iso6', 'mp41', 'mp42', 'avc1', 'dash', 'M4V ', 'MSNV'].includes(brand)) return 'mp4';
+  }
+  return null;
+}
+
+/** Saves a hero/background video unchanged. Use MP4 (H.264) for iPhone + Android. */
+export async function storeVideo(buf: Buffer) {
+  const kind = sniffVideo(buf);
+  if (!kind) throw badRequest('Only MP4, WebM or MOV videos are allowed', 'bad_video');
+  const d = new Date();
+  const key = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${crypto.randomBytes(8).toString('hex')}`;
+  const url = await storage.put(`${key}/video.${kind}`, buf, `video/${kind === 'mov' ? 'quicktime' : kind}`);
+  return { key, url, bytes: buf.length, mime: `video/${kind}` };
+}

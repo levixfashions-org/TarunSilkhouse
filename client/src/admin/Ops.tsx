@@ -6,6 +6,8 @@ import { currentToken, del, get, patch, post, put } from '@/lib/api';
 import { dateIN, inr, occasionLabel, statusLabel, waLink } from '@/lib/format';
 import { useBoot, useUI } from '@/store';
 import { AdjustDialog, Box, Field, PageHead, RichEditor, Toggle, UploadButton } from './kit';
+import HomeEditor from './HomeEditor';
+import { AudiencePage, downloadAdminFile, MediaLibrary, TeamPage } from './Setup';
 
 /* ================================================================ orders */
 type OrderRow = { id: string; number: string; createdAt: string; name: string; city: string; phone: string; total: number; status: string; paymentMethod: string; items: number };
@@ -43,7 +45,15 @@ function OrdersList() {
   };
   return (
     <div>
-      <PageHead title="Orders" sub={data ? `${data.total} orders` : undefined} />
+      <PageHead
+        title="Orders"
+        sub={data ? `${data.total} orders` : undefined}
+        actions={
+          <button className="btn-ghost min-h-[42px] px-5" onClick={() => downloadAdminFile('/orders.csv', `orders-${new Date().toISOString().slice(0, 10)}.csv`)}>
+            <FileDown size={16} /> Export to Excel (CSV)
+          </button>
+        }
+      />
       <div className="mb-4 flex flex-wrap gap-2">
         <input className="field max-w-xs" placeholder="Order no., phone, name, email" value={q} onChange={(e) => set('q', e.target.value || null)} />
         {['ALL', ...STATUSES].map((s) => (
@@ -808,158 +818,6 @@ function Categories() {
   );
 }
 
-/* ================================================================ homepage sections */
-type Section = { id: string; type: string; title: string | null; data: Record<string, unknown>; isVisible: boolean; sortOrder: number };
-const SECTION_LABEL: Record<string, string> = {
-  hero: 'Hero (silk scene, headline, buttons, video)',
-  marquee: 'Scrolling fabric names',
-  story: 'Loom → weaver → drape story',
-  collections: 'Horizontal fabric gallery',
-  new: 'New arrivals',
-  bestsellers: 'Bestsellers',
-  pallu: 'Pallu feature',
-  colours: 'Shop by colour',
-  edits: 'Editorial edits',
-  craft: 'Craft & authenticity',
-  testimonials: 'Testimonials',
-  instagram: 'Instagram strip',
-  newsletter: 'Newsletter',
-};
-
-function Homepage() {
-  const [rows, setRows] = useState<Section[] | null>(null);
-  const [edit, setEdit] = useState<Section | null>(null);
-  const [json, setJson] = useState('');
-  const [err, setErr] = useState<string | null>(null);
-  const toast = useUI((s) => s.toast);
-  const reloadBoot = useBoot((b) => b.load);
-  const load = () => get<{ items: Section[] }>('/admin/home').then((r) => setRows(r.items));
-  useEffect(() => {
-    void load();
-  }, []);
-  const reorder = async (i: number, d: number) => {
-    if (!rows || !rows[i + d]) return;
-    const next = [...rows];
-    [next[i], next[i + d]] = [next[i + d], next[i]];
-    setRows(next);
-    await post('/admin/home/reorder', { ids: next.map((r) => r.id) });
-    void reloadBoot();
-  };
-  const hero = edit?.type === 'hero';
-  const hd = (edit?.data ?? {}) as Record<string, string>;
-  const setHd = (k: string, v: string) => edit && setEdit({ ...edit, data: { ...edit.data, [k]: v } });
-  return (
-    <div>
-      <PageHead title="Homepage" sub="Reorder, hide or edit each block. Changes are live within seconds." />
-      {!rows ? (
-        <Spinner />
-      ) : (
-        <ul className="card divide-y divide-line">
-          {rows.map((s, i) => (
-            <li key={s.id} className="flex items-center gap-3 p-3">
-              <span className="flex flex-col">
-                <button className="rounded p-1 hover:bg-blush" onClick={() => reorder(i, -1)} aria-label="Move up"><ArrowUp size={14} /></button>
-                <button className="rounded p-1 hover:bg-blush" onClick={() => reorder(i, 1)} aria-label="Move down"><ArrowDown size={14} /></button>
-              </span>
-              <button className="min-w-0 flex-1 text-left" onClick={() => { setEdit(s); setJson(JSON.stringify(s.data, null, 2)); setErr(null); }}>
-                <p className="font-medium">{s.title || SECTION_LABEL[s.type] || s.type}</p>
-                <p className="text-[13px] text-muted">{SECTION_LABEL[s.type] ?? s.type}</p>
-              </button>
-              <button
-                className={`rounded-full px-3 py-1 text-[12px] ${s.isVisible ? 'bg-sage/20' : 'bg-line'}`}
-                onClick={async () => {
-                  await put(`/admin/home/${s.id}`, { ...s, isVisible: !s.isVisible });
-                  void load();
-                  void reloadBoot();
-                }}
-              >
-                {s.isVisible ? 'Visible' : 'Hidden'}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      <Sheet
-        open={!!edit}
-        onClose={() => setEdit(null)}
-        title={edit ? SECTION_LABEL[edit.type] ?? edit.type : ''}
-        wide
-        footer={
-          <button
-            className="btn-primary w-full"
-            onClick={async () => {
-              if (!edit) return;
-              let data = edit.data;
-              if (!hero) {
-                try {
-                  data = JSON.parse(json);
-                } catch {
-                  return setErr('The content is not valid — check commas and quotes.');
-                }
-              }
-              await put(`/admin/home/${edit.id}`, { ...edit, data });
-              toast('Section saved');
-              setEdit(null);
-              void load();
-              void reloadBoot();
-            }}
-          >
-            Save section
-          </button>
-        }
-      >
-        {edit && (
-          <div className="space-y-4">
-            <Field label="Heading">
-              <input className="field" value={edit.title ?? ''} onChange={(e) => setEdit({ ...edit, title: e.target.value })} />
-            </Field>
-            {hero ? (
-              <>
-                <Field label="Small line above the headline">
-                  <input className="field" value={hd.eyebrow ?? ''} onChange={(e) => setHd('eyebrow', e.target.value)} />
-                </Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Headline line 1">
-                    <input className="field" value={hd.line1 ?? ''} onChange={(e) => setHd('line1', e.target.value)} />
-                  </Field>
-                  <Field label="Headline line 2 (italic gold)">
-                    <input className="field" value={hd.line2 ?? ''} onChange={(e) => setHd('line2', e.target.value)} />
-                  </Field>
-                  <Field label="Button text">
-                    <input className="field" value={hd.cta ?? ''} onChange={(e) => setHd('cta', e.target.value)} />
-                  </Field>
-                  <Field label="Button link">
-                    <input className="field" value={hd.ctaLink ?? ''} onChange={(e) => setHd('ctaLink', e.target.value)} />
-                  </Field>
-                  <Field label="Second link text">
-                    <input className="field" value={hd.secondary ?? ''} onChange={(e) => setHd('secondary', e.target.value)} />
-                  </Field>
-                  <Field label="Second link">
-                    <input className="field" value={hd.secondaryLink ?? ''} onChange={(e) => setHd('secondaryLink', e.target.value)} />
-                  </Field>
-                </div>
-                <Field label="Fallback video URL (MP4)" hint="Plays on phones that skip the 3D silk. Upload to /uploads or paste a link. Leave empty to use the poster image.">
-                  <input className="field" value={hd.video ?? ''} onChange={(e) => setHd('video', e.target.value)} placeholder="https://…/hero.mp4" />
-                </Field>
-                <div>
-                  <span className="label">Poster image</span>
-                  <UploadButton multiple={false} keepOriginal label="Upload poster" onDone={(f) => setHd('poster', f[0].url.replace('main.webp', 'main.jpg'))} />
-                  {hd.poster && <p className="mt-1 text-[12px] text-muted">{hd.poster}</p>}
-                </div>
-              </>
-            ) : (
-              <Field label="Content" hint="Text, links and lists for this block. Keep the quotes and commas as they are.">
-                <textarea className="field font-mono text-[13px]" rows={16} value={json} onChange={(e) => setJson(e.target.value)} spellCheck={false} />
-              </Field>
-            )}
-            {err && <p className="text-[14px] text-danger">{err}</p>}
-          </div>
-        )}
-      </Sheet>
-    </div>
-  );
-}
-
 /* ================================================================ announcement + settings */
 type Settings = {
   store: Record<string, string | boolean>;
@@ -1026,6 +884,7 @@ function SettingsPage() {
   return (
     <div className="pb-20">
       <PageHead title="Settings" actions={<button className="btn-primary min-h-[42px] px-6" onClick={saveAll}>Save all</button>} />
+      <SampleRemoval />
       <div className="grid gap-6 lg:grid-cols-2">
         <Box title="Store">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -1112,6 +971,42 @@ function SettingsPage() {
   );
 }
 
+function SampleRemoval() {
+  const [count, setCount] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const toast = useUI((t) => t.toast);
+  useEffect(() => {
+    get<{ counts: { sampleProducts: number } }>('/admin/setup-status').then((r) => setCount(r.counts.sampleProducts)).catch(() => {});
+    if (location.hash === '#samples') setTimeout(() => document.getElementById('samples')?.scrollIntoView({ behavior: 'smooth' }), 300);
+  }, []);
+  if (!count) return null;
+  return (
+    <section id="samples" className="mb-6 rounded-card border border-gold/60 bg-gold/10 p-5">
+      <h2 className="font-serif text-xl">Sample sarees</h2>
+      <p className="mt-1 text-[14px]">
+        The store came with {count} sample sarees so it looks complete while you set up. Remove them once you have added your own. Collections, homepage and pages stay as they are.
+      </p>
+      <button
+        className="btn-ghost mt-4 min-h-[42px] px-5"
+        disabled={busy}
+        onClick={async () => {
+          if (!confirm(`Remove the ${count} sample sarees permanently? Your own sarees are not touched.`)) return;
+          setBusy(true);
+          try {
+            const r = await del<{ removed: number }>('/admin/sample-content');
+            toast(`Removed ${r.removed} sample sarees`);
+            setCount(0);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        <Trash2 size={16} /> Remove sample sarees
+      </button>
+    </section>
+  );
+}
+
 /* ================================================================ content pages */
 function Pages() {
   const [rows, setRows] = useState<{ slug: string; title: string; body: string; seoTitle: string | null }[] | null>(null);
@@ -1194,7 +1089,10 @@ export default function Ops() {
       <Route path="reviews" element={<Reviews />} />
       <Route path="collections" element={<Collections />} />
       <Route path="categories" element={<Categories />} />
-      <Route path="homepage" element={<Homepage />} />
+      <Route path="homepage" element={<HomeEditor />} />
+      <Route path="media" element={<MediaLibrary />} />
+      <Route path="team" element={<TeamPage />} />
+      <Route path="subscribers" element={<AudiencePage />} />
       <Route path="announcement" element={<Announcement />} />
       <Route path="pages" element={<Pages />} />
       <Route path="settings" element={<SettingsPage />} />

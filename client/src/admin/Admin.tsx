@@ -1,14 +1,15 @@
-import { BarChart3, FileText, Home, LayoutGrid, LogOut, Megaphone, Package, Percent, Pin, Settings, ShoppingBag, Star, Tags, Users } from 'lucide-react';
+import { ArrowDown, ArrowUp, BarChart3, FileText, Home, Image as ImageIcon, LayoutGrid, LogOut, Mail, Megaphone, Package, Percent, Pin, Settings, ShieldCheck, ShoppingBag, Star, Tags, Trash2, Users } from 'lucide-react';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link, Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { Wordmark } from '@/components/Ornaments';
 import { Framed, Spinner } from '@/components/ui';
-import { get, patch, post } from '@/lib/api';
+import { del, get, patch, post } from '@/lib/api';
 import { signOut } from '@/lib/auth';
 import { dateIN, inr, statusLabel } from '@/lib/format';
 import { useSeo } from '@/lib/hooks';
 import { useAuth, useUI } from '@/store';
 import { Box, PageHead } from './kit';
+import { SetupChecklist } from './Setup';
 
 const ProductEdit = lazy(() => import('./ProductEdit'));
 const Ops = lazy(() => import('./Ops'));
@@ -20,11 +21,14 @@ const NAV: [string, string, typeof Home][] = [
   ['/admin/collections', 'Collections', LayoutGrid],
   ['/admin/categories', 'Categories', Tags],
   ['/admin/customers', 'Customers', Users],
+  ['/admin/subscribers', 'Subscribers', Mail],
   ['/admin/discounts', 'Discounts', Percent],
   ['/admin/reviews', 'Reviews', Star],
   ['/admin/homepage', 'Homepage', Home],
   ['/admin/announcement', 'Announcement', Megaphone],
   ['/admin/pages', 'Pages', FileText],
+  ['/admin/media', 'Media library', ImageIcon],
+  ['/admin/team', 'Team', ShieldCheck],
   ['/admin/settings', 'Settings', Settings],
 ];
 
@@ -54,6 +58,7 @@ function Dashboard() {
   return (
     <div>
       <PageHead title="Today at Tarun Silks" sub={dateIN(new Date(), { weekday: 'long', day: 'numeric', month: 'long' })} />
+      <SetupChecklist />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {stat("Today's orders", String(d.today), '/admin/orders')}
         {stat("Today's revenue", inr(d.revenueToday))}
@@ -127,6 +132,14 @@ function Products() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, status]);
 
+  const move = async (i: number, d: number) => {
+    if (!rows || !rows[i + d]) return;
+    const next = [...rows];
+    [next[i], next[i + d]] = [next[i + d], next[i]];
+    setRows(next);
+    await post('/admin/products/reorder', { ids: next.map((r) => r.id) });
+  };
+
   const saveBulk = async () => {
     await post('/admin/products/bulk', {
       products: Object.entries(edits.p).map(([id, v]) => ({ id, ...v })),
@@ -190,10 +203,11 @@ function Products() {
                 <th className="p-3 font-normal">MRP (₹)</th>
                 <th className="p-3 font-normal">Stock by colour</th>
                 <th className="p-3 font-normal">Status</th>
+                <th className="p-3 font-normal"><span className="sr-only">Order and delete</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {rows.map((r) => (
+              {rows.map((r, i) => (
                 <tr key={r.id} className="align-middle">
                   <td className="p-3">
                     <Link to={`/admin/products/${r.id}`} className="flex items-center gap-3 hover:text-maroon">
@@ -247,6 +261,28 @@ function Products() {
                     >
                       {r.isActive ? 'Visible' : 'Hidden'}
                     </button>
+                  </td>
+                  <td className="p-3">
+                    <span className="flex items-center justify-end gap-0.5 text-muted">
+                      <button className="rounded p-1.5 hover:bg-blush disabled:opacity-30" disabled={i === 0 || !!q || status !== 'all'} title="Show earlier in the shop" aria-label="Move up" onClick={() => move(i, -1)}>
+                        <ArrowUp size={14} />
+                      </button>
+                      <button className="rounded p-1.5 hover:bg-blush disabled:opacity-30" disabled={i === rows.length - 1 || !!q || status !== 'all'} title="Show later in the shop" aria-label="Move down" onClick={() => move(i, 1)}>
+                        <ArrowDown size={14} />
+                      </button>
+                      <button
+                        className="rounded p-1.5 hover:bg-blush hover:text-danger"
+                        aria-label={`Delete ${r.name}`}
+                        onClick={async () => {
+                          if (!confirm(`Delete “${r.name}” permanently? Past orders keep their copy. You can also just hide it.`)) return;
+                          await del(`/admin/products/${r.id}`);
+                          toast('Deleted');
+                          void load();
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </span>
                   </td>
                 </tr>
               ))}

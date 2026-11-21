@@ -112,7 +112,7 @@ Every `git push` redeploys the whole site (API + storefront) in one go.
 
 Open `https://your-domain/admin` and sign in with an email listed in `ADMIN_EMAILS`.
 
-- **Dashboard** — today's orders and revenue, orders to pack, low-stock colours, top sellers.
+- **Dashboard** — a **Set up your store** checklist (store details, WhatsApp, logo, address, first saree, remove samples, homepage, policies, payments) with a button for each step, plus **Connected services** showing whether sign-in, online payments, order emails, photo storage and analytics are working. Below: today's orders and revenue, orders to pack, low-stock colours, top sellers.
 - **Products → Add saree**
   - Fill name, description (bold and bullet buttons; pasted `*bold*` and `- bullets` are converted automatically), fabric, weave, work, border, pallu, origin, occasions, care.
   - **Colours & stock:** one row per colour with its own stock. Sarees have no sizes. "Shop-by-colour group" decides which colour orb shows it on the home page.
@@ -126,7 +126,12 @@ Open `https://your-domain/admin` and sign in with an email listed in `ADMIN_EMAI
 - **Collections** — automatic (by fabric, occasion, price) or hand-picked. Turn on "Editorial look-book page" for Wedding/Festive style pages with their own accent colour. Cover images have the same Adjust tool.
 - **Discounts** — percent, flat ₹ or free shipping; minimum bag value, total uses, uses per customer, expiry.
 - **Reviews** — approve or reject. Only customers whose order was delivered can review.
-- **Homepage** — reorder, hide or edit each block. The hero block has plain fields for the headline, buttons, fallback video and poster.
+- **Homepage** — every band of the homepage is a block with its own simple form: hero (headline, buttons, upload a fallback video and poster), scrolling words, brand story steps, fabric gallery (pick collections), new arrivals, bestsellers, pallu feature (pick a saree), shop-by-colour orbs, editorial edits with a quote, craft points, customer quotes, Instagram strip, newsletter. **Add block**, reorder with the arrows, hide with the eye, delete in the block. In headings, press Enter to split onto two lines (the second line shows in italics).
+- **Media library** — every uploaded photo and video; upload new ones, copy a link, open the original.
+- **Team** — add or remove staff emails who can use the admin panel (the owners in `ADMIN_EMAILS` are always admins).
+- **Subscribers** — newsletter sign-ups (download as CSV) and back-in-stock requests from customers.
+- **Remove sample sarees** — Settings → *Sample sarees* deletes the 12 starter sarees in one click once your own are added.
+- **Orders → Export to Excel (CSV)** — every order with customer, items, amounts, courier and AWB.
 - **Announcement** — the strip at the very top of the site.
 - **Pages** — About, Weavers, Store, Contact, Care guide, Shipping, Returns, Privacy, Terms, FAQ (and new pages).
 - **Settings** — store details, WhatsApp number, logo, GSTIN, shipping zones by pincode prefix, free-shipping threshold, gift-wrap price, COD fee/limit/blocked pincodes, Google Analytics + Meta Pixel IDs, newsletter export.

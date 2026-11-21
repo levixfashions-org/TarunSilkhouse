@@ -14,6 +14,11 @@ const SilkHero = lazy(() => import('@/three/SilkHero'));
 
 type List = { items: Card[] };
 const s = <T,>(v: unknown, d: T): T => (v === undefined || v === null ? d : (v as T));
+/** Headings typed in the admin: a line break splits into two lines (the second is italic). */
+const lines = (title: string | null | undefined, fallback: string[]) => {
+  const t = (title ?? '').trim();
+  return t ? t.split(/\n+/).map((x) => x.trim()).filter(Boolean) : fallback;
+};
 
 /* ------------------------------------------------------------------ hero */
 function Hero({ sec }: { sec: HomeSection }) {
@@ -157,7 +162,7 @@ function Story({ sec }: { sec: HomeSection }) {
       </div>
       <div className="page-x grid h-full items-center gap-10 md:grid-cols-12">
         <div className="pl-6 md:col-span-5 md:pl-10">
-          <h2 className="mb-10 font-serif text-d-3">{sec.title ?? 'From loom to drape'}</h2>
+          <h2 className="mb-10 font-serif text-d-3">{lines(sec.title, ['From loom to drape']).join(' ')}</h2>
           <ol className="space-y-8">
             {steps.map((st, i) => (
               <li key={st.title} className={`transition-opacity duration-900 ease-silk ${i === active ? 'opacity-100' : 'opacity-30'}`}>
@@ -231,7 +236,7 @@ function Collections({ sec }: { sec: HomeSection }) {
     <section ref={root} className="relative overflow-hidden bg-[#1B1612] py-16 text-[#FBF7F0] md:h-[100svh] md:py-0">
       <div className="flex h-full flex-col justify-center">
         <div className="page-x mb-8 flex items-end justify-between gap-6 md:mb-10">
-          <Reveal lines={['Eight looms.', 'One obsession.']} italicLast className="font-serif text-d-2" />
+          <Reveal lines={lines(sec.title, ['Eight looms.', 'One obsession.'])} italicLast className="font-serif text-d-2" />
           <Link to="/shop" className="hidden shrink-0 text-[15px] underline decoration-[#B8893B] underline-offset-[6px] md:block">
             Shop every fabric
           </Link>
@@ -330,7 +335,7 @@ function Pallu({ sec }: { sec: HomeSection }) {
         <Draw className="mb-6 w-16 text-gold">
           <Kalga />
         </Draw>
-        <Reveal lines={['All the drama lives', 'in the pallu.']} italicLast className="font-serif text-d-3" />
+        <Reveal lines={lines(sec.title, ['All the drama lives', 'in the pallu.'])} italicLast className="font-serif text-d-3" />
         <p className="mt-6 max-w-md text-[17px] text-muted">{s(sec.data.body, '')}</p>
         {slug && (
           <Link to={`/products/${slug}`} className="btn-primary mt-8 self-start">
@@ -365,7 +370,7 @@ function Colours({ sec }: { sec: HomeSection }) {
   return (
     <section className="py-20 md:py-28">
       <div className="page-x text-center">
-        <Reveal lines={[sec.title ?? 'Choose a mood.']} className="font-serif text-d-2" />
+        <Reveal lines={lines(sec.title, ['Choose a mood.'])} italicLast className="font-serif text-d-2" />
         <p className="mx-auto mt-4 max-w-md text-muted">Tap a colour to see every saree woven in it.</p>
         <div className="mx-auto mt-12 flex max-w-3xl flex-wrap justify-center gap-5 md:gap-8">
           {swatches.map((w) => (
@@ -423,8 +428,8 @@ function Edits({ sec }: { sec: HomeSection }) {
           <Draw className="mb-6 w-28 text-gold">
             <Peacock />
           </Draw>
-          <blockquote className="font-serif text-d-4 leading-snug">“A Kanjivaram is not bought for a day. It is bought for a daughter’s daughter.”</blockquote>
-          <p className="mt-4 text-muted">— a weaver in Kanchipuram</p>
+          <blockquote className="font-serif text-d-4 leading-snug">“{s(sec.data.quote, '') || 'A Kanjivaram is not bought for a day. It is bought for a daughter’s daughter.'}”</blockquote>
+          <p className="mt-4 text-muted">— {s(sec.data.quoteBy, '') || 'a weaver in Kanchipuram'}</p>
         </div>
         <div className="grid grid-cols-2 gap-6 md:col-span-5">
           {[b, c].filter(Boolean).map((x) => (
@@ -447,7 +452,7 @@ function Craft({ sec }: { sec: HomeSection }) {
       <Kolam className="pointer-events-none absolute -left-16 top-10 h-80 w-80 text-[#E6C27A]/15" />
       <div className="page-x relative grid gap-12 md:grid-cols-12">
         <div className="md:col-span-5">
-          <Reveal lines={[sec.title ?? 'Every saree, verifiably handwoven.']} className="font-serif text-d-3" />
+          <Reveal lines={lines(sec.title, ['Every saree, verifiably handwoven.'])} className="font-serif text-d-3" />
         </div>
         <ul className="grid gap-10 md:col-span-7 md:grid-cols-3">
           {pts.map((p) => (
