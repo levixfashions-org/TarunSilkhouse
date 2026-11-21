@@ -31,7 +31,7 @@ tarun-silks/
 
 ## 1. Run it on your computer
 
-Needs Node 18.18+ and a MySQL 8 or MariaDB 10.6+ database (XAMPP's MariaDB works).
+Needs Node 22.12+ and a MySQL 8 or MariaDB 10.6+ database (XAMPP's MariaDB works).
 
 ```bash
 npm install                    # installs root, client and server
@@ -87,7 +87,7 @@ Create `orders@your-domain` in Hostinger → Emails, then fill `SMTP_*`. Without
 1. Push this folder to a GitHub repository (the `.gitignore` keeps `.env`, `node_modules`, `dist` and uploads out).
 2. hPanel → **Websites → Add website → Node.js Apps → Import Git repository** → pick the repo.
 3. Build settings:
-   - Node version: **20** (18.18+ works)
+   - Node version: **22.x** (or 24.x)
    - Install: `npm install`
    - Build command: `npm run build`
    - Start / entry file: `dist/server.js` (start command `npm start`)
