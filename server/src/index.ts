@@ -14,6 +14,7 @@ import { contentVersion } from './lib/cache.ts';
 import { errorHandler } from './lib/errors.ts';
 import { log } from './lib/log.ts';
 import { uploadRoot } from './lib/storage.ts';
+import { setupDatabase, setupState } from './lib/setup-db.ts';
 import { account } from './routes/account.ts';
 import { adminCatalog } from './routes/admin/catalog.ts';
 import { adminOrders } from './routes/admin/orders.ts';
@@ -80,10 +81,18 @@ app.use('/api', limit(1, 300));
 app.get('/api/health', async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    res.json({ ok: true, db: 'up', version: contentVersion() });
+    res.json({ ok: true, db: 'up', setup: setupState(), version: contentVersion() });
   } catch {
     res.status(503).json({ ok: false, db: 'down' });
   }
+});
+
+app.use('/api', (req, res, next) => {
+  if (setupState() === 'pending') {
+    res.status(503).set('Retry-After', '5').json({ error: { message: 'The store is getting ready — please refresh in a few seconds.', code: 'setting_up' } });
+    return;
+  }
+  next();
 });
 
 app.use('/api', attachUser);
@@ -132,7 +141,7 @@ app.use(errorHandler);
 const server = app.listen(env.PORT, () => {
   log.info('server_started', { port: env.PORT, env: env.NODE_ENV, publicDir: publicDir ?? null });
 });
-startJobs();
+void setupDatabase().then(startJobs);
 
 const shutdown = () => {
   server.close(() => {

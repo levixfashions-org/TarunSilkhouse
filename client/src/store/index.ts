@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { del, get, post, put } from '@/lib/api';
+import { ApiError, del, get, post, put } from '@/lib/api';
 import type { Boot, LineOptions } from '@/lib/types';
 import { setUiSounds, startAmbience, stopAmbience } from '@/lib/sound';
 
@@ -10,11 +10,22 @@ export const useBoot = create<BootState>((set) => ({
   boot: null,
   error: null,
   load: async () => {
-    try {
-      set({ boot: await get<Boot>('/bootstrap'), error: null });
-    } catch (e) {
-      set({ error: (e as Error).message });
+    // While the server finishes first-start setup it answers 503 "setting_up": wait and retry quietly.
+    for (let attempt = 0; attempt < 24; attempt++) {
+      try {
+        set({ boot: await get<Boot>('/bootstrap'), error: null });
+        return;
+      } catch (e) {
+        const err = e as ApiError;
+        if (err.code === 'setting_up' || err.status === 502 || err.status === 503) {
+          await new Promise((r) => setTimeout(r, 5000));
+          continue;
+        }
+        set({ error: err.message });
+        return;
+      }
     }
+    set({ error: 'The store is taking longer than usual to start. Please try again in a minute.' });
   },
 }));
 

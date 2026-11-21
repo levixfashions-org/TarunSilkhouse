@@ -81,7 +81,7 @@ Create `orders@your-domain` in Hostinger → Emails, then fill `SMTP_*`. Without
 
 **Database**
 1. hPanel → **Databases → MySQL Databases** → create database + user (note the name, user, password).
-2. **phpMyAdmin** → select the database → **Import** → choose `server/prisma/init.sql` → Go.
+2. That's it — on its first start the app creates all tables and loads the starter store (12 sample sarees, collections, homepage, pages) by itself. `/api/health` shows `"setup":"ready"` when done (~30 s). (Importing `server/prisma/init.sql` in phpMyAdmin still works if you prefer; set `AUTO_SETUP=false` to switch automatic setup off.)
 
 **App**
 1. Push this folder to a GitHub repository (the `.gitignore` keeps `.env`, `node_modules`, `dist` and uploads out).
@@ -93,7 +93,6 @@ Create `orders@your-domain` in Hostinger → Emails, then fill `SMTP_*`. Without
    - Start / entry file: `dist/server.js` (start command `npm start`)
 4. **Environment variables:** paste everything from `.env.example` with real values, `NODE_ENV=production`, `PUBLIC_URL=https://your-domain`, `DATABASE_URL=mysql://user:pass@localhost:3306/dbname`, and `UPLOAD_DIR` pointing to a folder outside the app folder (e.g. `/home/u123456789/tarun-uploads`) so photos survive redeploys.
 5. Deploy. Check `https://your-domain/api/health` → `{"ok":true,"db":"up"}`.
-6. Seed the sample catalogue once (optional): hPanel → **Advanced → SSH**, `cd` into the app folder, `npm run seed`. Or start empty and add sarees in the admin.
 7. Connect the domain and enable SSL in hPanel.
 
 Every `git push` redeploys the whole site (API + storefront) in one go.

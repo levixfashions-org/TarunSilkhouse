@@ -41,4 +41,6 @@ await esbuild.build({
 });
 
 fs.cpSync(path.join(root, 'client/dist'), path.join(root, 'dist/public'), { recursive: true });
+// Table definitions for first-start setup (see server/src/lib/setup-db.ts)
+fs.copyFileSync(path.join(root, 'server/prisma/init.sql'), path.join(root, 'dist/init.sql'));
 console.log('\n✓ Build complete → dist/server.js + dist/public  (start: node dist/server.js)\n');
