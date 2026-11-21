@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Box, Check, MessageCircle, Share2, Star, Truck } from 'lucide-react';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { DoorArch, DoorRings } from '@/components/Arch';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Draw, Kalga, TempleBorder } from '@/components/Ornaments';
+import { Draw, Kalga } from '@/components/Ornaments';
 import { flyToBag, ProductCard, WishHeart } from '@/components/ProductCard';
 import { EASE, Empty, Framed, RichText, Sheet, Spinner } from '@/components/ui';
 import { ApiError, cached, get, post } from '@/lib/api';
@@ -19,7 +20,7 @@ const DrapeViewer = lazy(() => import('@/three/DrapeViewer'));
 type Data = { product: P; related: Card[]; completeTheLook: Card[]; reviews: Review[]; rating: { avg: number | null; count: number } };
 
 /** Press-and-hold (or hover on desktop) magnifier that follows the pointer. */
-function WeaveZoom({ url, alt, priority, vtName, arch = true }: { url: string; alt: string; priority?: boolean; vtName?: string; arch?: boolean }) {
+function WeaveZoom({ url, alt, priority, vtName, arch = true, door = false, sizes = '(min-width:1024px) 30vw, 100vw' }: { url: string; alt: string; priority?: boolean; vtName?: string; arch?: boolean; door?: boolean; sizes?: string }) {
   const [lens, setLens] = useState<{ x: number; y: number } | null>(null);
   const hold = useRef<ReturnType<typeof setTimeout> | null>(null);
   const zoom = variant(parseFrame(url).src, 'zoom');
@@ -29,7 +30,7 @@ function WeaveZoom({ url, alt, priority, vtName, arch = true }: { url: string; a
   };
   return (
     <div
-      className={`relative select-none ${arch ? 'arch arch-line' : 'overflow-hidden rounded-card'}`}
+      className={`relative select-none ${door ? 'arch-door arch-line' : arch ? 'arch arch-line' : 'overflow-hidden rounded-card'}`}
       style={{ touchAction: lens ? 'none' : 'pan-y' }}
       onPointerDown={(e) => {
         const p = pos(e);
@@ -50,7 +51,7 @@ function WeaveZoom({ url, alt, priority, vtName, arch = true }: { url: string; a
       onContextMenu={(e) => e.preventDefault()}
       data-cursor="hide"
     >
-      <Framed url={url} alt={alt} priority={priority} sizes="(min-width:1024px) 30vw, 100vw" vtName={vtName} />
+      <Framed url={url} alt={alt} priority={priority} sizes={sizes} vtName={vtName} />
       <AnimatePresence>
         {lens && (
           <motion.div
@@ -341,13 +342,29 @@ export default function Product() {
                 </div>
                 <p className="mt-2 text-center text-[13px] text-muted">Press and hold a photo to see the weave</p>
               </div>
-              {/* desktop: large grid */}
-              <div className="hidden grid-cols-2 gap-4 md:grid">
-                {images.map((im, i) => (
-                  <div key={im.url} className={i === 0 ? 'col-span-2 mx-auto w-full max-w-[560px]' : ''}>
-                    <WeaveZoom url={im.url} alt={im.alt} priority={i === 0} vtName={i === 0 ? 'product-hero' : undefined} />
+              {/* desktop: arch thumbnails + the saree in a gold temple doorway */}
+              <div className="hidden gap-6 md:grid md:grid-cols-[88px_minmax(0,1fr)] xl:grid-cols-[96px_minmax(0,1fr)]">
+                <div role="tablist" aria-label="Photos" className="flex flex-col gap-3.5 pt-14">
+                  {images.map((im, i) => (
+                    <button
+                      key={im.url}
+                      role="tab"
+                      aria-selected={i === slide}
+                      aria-label={`Photo ${i + 1}`}
+                      onClick={() => setSlide(i)}
+                      className={`arch-door w-full bg-blush transition-shadow ${i === slide ? 'shadow-[0_0_0_2px_rgb(var(--ivory)),0_0_0_3px_#B8893B]' : 'opacity-75 hover:opacity-100'}`}
+                    >
+                      <Framed url={im.url} alt="" sizes="96px" ratio={135} />
+                    </button>
+                  ))}
+                </div>
+                <div className="relative mx-auto w-full max-w-[600px] bg-[radial-gradient(ellipse_70%_60%_at_50%_55%,rgb(var(--blush)),transparent_75%)] pt-14">
+                  <div className="relative mx-auto w-[88%] shadow-[0_50px_100px_-40px_rgba(27,10,14,.55)] [border-radius:9999px_9999px_0_0]">
+                    <DoorRings w="100%" h="100%" step={36} count={2} />
+                    {images[slide] && <WeaveZoom key={images[slide].url} url={images[slide].url} alt={images[slide].alt} priority door sizes="(min-width:1024px) 34vw, 60vw" vtName={slide === 0 ? 'product-hero' : undefined} />}
                   </div>
-                ))}
+                  <p className="mt-3 text-center text-[13px] text-muted">Hover the saree to see the weave up close</p>
+                </div>
               </div>
             </>
           )}
@@ -380,7 +397,17 @@ export default function Product() {
               <Link to="/shop">Shop</Link> <span aria-hidden>/</span> <Link to={`/shop?fabric=${encodeURIComponent(p.fabric)}`}>{p.fabric}</Link>
             </nav>
             <div className="flex items-start justify-between gap-4">
-              <h1 className="font-serif text-d-3">{p.name}</h1>
+              <h1 className="font-serif text-[clamp(2.6rem,4.6vw,4.25rem)] leading-[0.95] tracking-[-0.015em]">
+                {p.name.split(' ').length > 1 ? (
+                  <>
+                    {p.name.split(' ').slice(0, -1).join(' ')}
+                    <br />
+                    <span className="italic text-maroon dark:text-gold">{p.name.split(' ').slice(-1)}</span>
+                  </>
+                ) : (
+                  p.name
+                )}
+              </h1>
               <WishHeart id={p.id} className="mt-1 shrink-0 border border-line" />
             </div>
             {d.rating.count > 0 && (
@@ -389,7 +416,7 @@ export default function Product() {
               </a>
             )}
             <div className="mt-4 flex items-baseline gap-3">
-              <span className="font-serif text-[2rem]">{inr(price)}</span>
+              <span className="font-serif text-[2.6rem] leading-none">{inr(price)}</span>
               {off > 0 && (
                 <>
                   <s className="text-muted">{inr(mrp)}</s>
@@ -557,7 +584,35 @@ export default function Product() {
         </div>
       </div>
 
-      <TempleBorder className="my-10 h-4 w-full text-gold/60" />
+      {/* the craft: a dark band telling how this saree was woven */}
+      <section className="relative mt-16 overflow-hidden bg-[radial-gradient(ellipse_60%_80%_at_25%_50%,#5A1622,#1B0A0E_85%)] py-20 text-[#FBF7F0] md:py-28">
+        <div className="butti pointer-events-none absolute left-0 top-0 h-full w-full opacity-30" />
+        <div className="page-x relative grid items-center gap-12 md:grid-cols-[minmax(0,380px)_minmax(0,1fr)] md:gap-20">
+          <DoorArch url={(images.find((im) => im.tag === 'DETAIL') ?? images[images.length - 1])?.url} alt={`${p.name} weave up close`} sizes="380px" className="mx-auto h-[400px] w-full max-w-[320px] md:h-[480px] md:max-w-none" />
+          <div>
+            <p className="font-serif text-[22px] italic text-[#E6C27A] md:text-[24px]">{p.origin ? `Woven in ${p.origin}` : 'Handwoven for Tarun Silks'}</p>
+            <h2 className="mt-3 font-serif text-[clamp(2.4rem,5vw,4rem)] leading-none">{p.weave ? `${p.weave}, by hand.` : 'Woven by hand, thread by thread.'}</h2>
+            <dl className="mt-9 grid max-w-[620px] gap-x-10 gap-y-6 border-t border-[#E6C27A]/25 pt-7 sm:grid-cols-2">
+              {(
+                [
+                  ['Fabric', p.fabric],
+                  ['Border', p.border],
+                  ['Pallu', p.pallu],
+                  ['Length', p.lengthInfo],
+                ] as [string, string | null][]
+              )
+                .filter(([, v]) => v)
+                .map(([k, v]) => (
+                  <div key={k}>
+                    <dt className="text-[13px] text-[#FBF7F0]/55">{k}</dt>
+                    <dd className="mt-1 font-serif text-[22px] leading-snug">{v}</dd>
+                  </div>
+                ))}
+            </dl>
+            {p.handloomMark && <p className="mt-7 text-[15px] text-[#FBF7F0]/75">Carries the Handloom Mark — certified genuine handloom.</p>}
+          </div>
+        </div>
+      </section>
 
       {/* reviews */}
       <section id="reviews" className="page-x py-10">
@@ -611,7 +666,7 @@ export default function Product() {
       )}
       {d.related.length > 0 && (
         <section className="page-x py-12">
-          <h2 className="mb-8 font-serif text-d-4">You may also like</h2>
+          <h2 className="mb-10 font-serif text-[clamp(2.4rem,4.6vw,4rem)] leading-none">You may also <span className="italic text-maroon dark:text-gold">love</span></h2>
           <div className="no-scrollbar -mx-5 flex snap-x gap-4 overflow-x-auto px-5 md:mx-0 md:grid md:grid-cols-4 md:gap-6 md:px-0">
             {d.related.slice(0, 4).map((c) => (
               <div key={c.id} className="w-[64vw] shrink-0 snap-start md:w-auto">

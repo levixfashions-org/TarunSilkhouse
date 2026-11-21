@@ -320,8 +320,8 @@ export function Footer() {
   const s = useBoot((b) => b.boot?.store);
   const year = new Date().getFullYear();
   return (
-    <footer className="relative mt-24 overflow-hidden bg-[#1B1612] pb-[calc(var(--tabbar-h)+24px)] text-[#E9DFD2] md:pb-10">
-      <TempleBorder className="h-5 w-full text-[#B8893B]" />
+    <footer className="relative overflow-hidden bg-[#1B1612] pb-[calc(var(--tabbar-h)+24px)] text-[#E9DFD2] md:pb-10">
+      <div className="zari-band" aria-hidden />
       <Kolam className="pointer-events-none absolute -right-10 top-16 h-72 w-72 text-[#B8893B]/15" />
       <div className="page-x relative grid gap-12 py-16 md:grid-cols-12">
         <div className="md:col-span-5">

@@ -2,9 +2,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { Kolam, TempleBorder } from '@/components/Ornaments';
+import { DoorArch, DoorRings } from '@/components/Arch';
 import { CardSkeleton, ProductCard } from '@/components/ProductCard';
-import { EASE, Empty, Framed, Reveal, RichText, Sheet } from '@/components/ui';
+import { EASE, Empty, RichText, Sheet } from '@/components/ui';
 import { cached, get } from '@/lib/api';
 import { colourFamilies, occasionLabel, workLabel } from '@/lib/format';
 import { useSeo } from '@/lib/hooks';
@@ -174,33 +174,13 @@ export default function Shop({ editorial = false }: { editorial?: boolean }) {
 
   return (
     <div>
-      {isEdit && col ? (
-        /* -------- editorial look-book header: asymmetric, art-directed with the collection's own accent */
-        <section className="relative overflow-hidden" style={{ background: `${accent}14` }}>
-          <div className="page-x grid gap-8 py-12 md:grid-cols-12 md:py-20">
-            <div className="relative z-10 md:col-span-6 md:pt-16">
-              <Reveal lines={col.title.split(' ').length > 2 ? [col.title.split(' ').slice(0, 2).join(' '), col.title.split(' ').slice(2).join(' ')] : [col.title]} italicLast as="h1" className="font-serif text-d-1" />
-              {col.description && <RichText html={col.description} className="mt-8 max-w-md font-serif text-[1.5rem] leading-snug" />}
-              <div className="mt-8 h-px w-24" style={{ background: accent }} />
-            </div>
-            <div className="relative md:col-span-6">
-              <div className="relative ml-auto w-[78%]">
-                <Framed url={col.image} alt={col.title} priority sizes="40vw" className="rounded-[26px]" />
-              </div>
-              <div className="absolute -bottom-6 left-0 w-[42%] md:-left-10">
-                <Framed url={items?.[1]?.images[0]?.url} alt="" sizes="20vw" className="rounded-[20px] shadow-2xl ring-8 ring-ivory" />
-              </div>
-              <p className="absolute right-0 top-4 hidden max-w-[10rem] rotate-90 origin-top-right translate-x-full font-serif text-lg italic text-muted md:block">woven to be passed down</p>
-            </div>
-          </div>
-          <TempleBorder className="h-4 w-full" style={{ color: accent }} />
-        </section>
-      ) : (
-        <section className="relative overflow-hidden border-b border-line">
-          <Kolam className="pointer-events-none absolute -right-8 -top-8 h-56 w-56 text-gold/20" />
-          <div className="page-x py-12 md:py-16">
-            <nav className="mb-4 text-[13px] text-muted" aria-label="Breadcrumb">
-              <Link to="/">Home</Link> <span aria-hidden>/</span> <Link to="/shop">Shop</Link>
+      {/* -------- temple banner: the collection's name large, its saree in a gold doorway */}
+      <section className="relative overflow-hidden text-[#FBF7F0]" style={{ background: `radial-gradient(ellipse 60% 90% at 72% 60%, ${isEdit ? accent : '#6E1E2C'} 0%, #3A0F18 50%, #1B0A0E 90%)` }}>
+        <div className="butti pointer-events-none absolute left-0 top-0 h-full w-full opacity-45" />
+        <div className="page-x relative grid items-end gap-6 pt-10 md:min-h-[520px] md:grid-cols-[minmax(0,1fr)_440px] md:gap-14 md:pt-12">
+          <div className="pb-10 md:pb-[88px]">
+            <nav className="text-[14px] text-[#FBF7F0]/60" aria-label="Breadcrumb">
+              <Link to="/" className="hover:text-[#FBF7F0]">Home</Link> <span aria-hidden>/</span> <Link to="/shop" className="hover:text-[#FBF7F0]">Shop</Link>
               {col && (
                 <>
                   {' '}
@@ -208,11 +188,28 @@ export default function Shop({ editorial = false }: { editorial?: boolean }) {
                 </>
               )}
             </nav>
-            <Reveal lines={[title]} as="h1" className="font-serif text-d-2" />
-            {col?.description && <RichText html={col.description} className="mt-4 max-w-xl text-muted" />}
+            <h1 className="mt-5 font-serif text-[clamp(3.4rem,9vw,8rem)] leading-[0.86] tracking-[-0.025em]">
+              {(() => {
+                const w = title.split(' ');
+                if (w.length > 1) return (<>{w.slice(0, -1).join(' ')} <span className="italic text-[#E6C27A]">{w[w.length - 1]}</span></>);
+                const cut = Math.ceil(title.length / 2);
+                return title.length > 6 ? (<>{title.slice(0, cut)}<span className="italic text-[#E6C27A]">{title.slice(cut)}</span></>) : title;
+              })()}
+            </h1>
+            {col?.description && <RichText html={col.description} className="mt-6 max-w-[520px] text-[17px] leading-relaxed text-[#FBF7F0]/75 md:text-[18px] [&_a]:text-[#E6C27A]" />}
+            <p className="mt-5 text-[15px] text-[#E6C27A]">{items ? `${meta.total} ${meta.total === 1 ? 'saree' : 'sarees'}` : ' '}</p>
           </div>
-        </section>
-      )}
+          {(col?.image || items?.[0]?.images[0]?.url) && (
+            <div className="relative mx-auto hidden h-[480px] w-[440px] md:block">
+              <div className="absolute bottom-0 left-1/2 h-[440px] w-[340px] -translate-x-1/2">
+                <DoorRings w="100%" h="100%" step={44} count={2} />
+              </div>
+              <DoorArch url={col?.image || items?.[0]?.images[0]?.url} alt={col?.title ?? 'Sarees'} eager sizes="340px" className="absolute bottom-0 left-1/2 h-[440px] w-[340px] -translate-x-1/2 shadow-[0_40px_100px_-30px_rgba(0,0,0,.85)]" />
+            </div>
+          )}
+        </div>
+        <div className="zari-band" aria-hidden />
+      </section>
 
       <div className="page-x py-8">
         <div className="sticky top-[var(--header-h)] z-30 -mx-5 mb-6 flex items-center justify-between gap-3 border-b border-line bg-ivory/90 px-5 py-3 backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:backdrop-blur-none">
@@ -273,9 +270,12 @@ export default function Shop({ editorial = false }: { editorial?: boolean }) {
             )}
             {items && meta.page < meta.pages && (
               <div className="mt-14 text-center">
-                <p className="mb-4 text-[14px] text-muted">
+                <p className="mb-3 text-[14px] text-muted">
                   Showing {items.length} of {meta.total}
                 </p>
+                <div className="mx-auto mb-6 h-0.5 w-60 bg-line">
+                  <div className="h-full bg-gold transition-[width] duration-900 ease-silk" style={{ width: `${Math.round((items.length / Math.max(1, meta.total)) * 100)}%` }} />
+                </div>
                 <button className="btn-ghost" onClick={loadMore} disabled={loadingMore}>
                   {loadingMore ? 'Loading…' : 'Load more sarees'}
                 </button>
