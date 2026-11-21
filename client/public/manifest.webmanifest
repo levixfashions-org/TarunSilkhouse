@@ -1,0 +1,23 @@
+{
+  "name": "Tarun Silks — Six yards of poetry",
+  "short_name": "Tarun Silks",
+  "description": "Handloom Kanjivaram, Banarasi, Paithani and silk sarees.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1B1612",
+  "theme_color": "#FBF7F0",
+  "lang": "en-IN",
+  "categories": ["shopping", "lifestyle"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Shop all sarees", "url": "/shop" },
+    { "name": "Track my order", "url": "/track" },
+    { "name": "Wishlist", "url": "/wishlist" }
+  ]
+}

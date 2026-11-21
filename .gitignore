@@ -1,0 +1,12 @@
+node_modules/
+dist/
+client/dist/
+server/build/
+uploads/
+server/uploads/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.vscode/

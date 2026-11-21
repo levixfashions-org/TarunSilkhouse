@@ -1,0 +1,27 @@
+{
+  "name": "tarun-silks",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Tarun Silks \u2014 premium handloom saree store (React + Express + Prisma/MySQL)",
+  "engines": {
+    "node": ">=18.18"
+  },
+  "scripts": {
+    "postinstall": "npm --prefix client install --no-audit --no-fund && npm --prefix server install --no-audit --no-fund",
+    "dev": "npm --prefix server run dev & npm --prefix client run dev",
+    "build": "node scripts/build.mjs",
+    "start": "node dist/server.js",
+    "seed": "npm --prefix server run seed",
+    "typecheck": "npm --prefix server run typecheck && npm --prefix client run typecheck",
+    "assets": "node scripts/make-assets.mjs"
+  },
+  "dependencies": {
+    "@prisma/adapter-mariadb": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "firebase-admin": "^14.5.1",
+    "mariadb": "^3.5.4",
+    "pdfkit": "^0.21.0",
+    "sharp": "^0.35.5"
+  }
+}
