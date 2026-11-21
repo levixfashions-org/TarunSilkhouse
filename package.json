@@ -5,10 +5,10 @@
   "type": "module",
   "description": "Tarun Silks \u2014 premium handloom saree store (React + Express + Prisma/MySQL)",
   "engines": {
-    "node": ">=18.18"
+    "node": ">=20.19"
   },
   "scripts": {
-    "postinstall": "npm --prefix client install --no-audit --no-fund && npm --prefix server install --no-audit --no-fund",
+    "postinstall": "npm --prefix client install --include=dev --no-audit --no-fund && npm --prefix server install --include=dev --no-audit --no-fund",
     "dev": "npm --prefix server run dev & npm --prefix client run dev",
     "build": "node scripts/build.mjs",
     "start": "node dist/server.js",
