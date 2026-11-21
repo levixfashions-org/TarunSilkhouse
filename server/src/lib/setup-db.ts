@@ -12,6 +12,7 @@ import { prisma } from '../db.ts';
 import { log } from './log.ts';
 
 let state: 'pending' | 'ready' | 'failed' = 'pending';
+let attempts = 0;
 export const setupState = () => state;
 
 function findInitSql(): string | null {
@@ -67,16 +68,22 @@ export async function setupDatabase() {
       log.info('db_setup_creating_tables');
       await createTables();
     }
-    const [products, sections] = await Promise.all([prisma.product.count(), prisma.homeSection.count()]);
-    if (products === 0 && sections === 0) {
-      log.info('db_setup_loading_starter_store');
+    // No homepage blocks = the starter store was never finished (fresh DB, or an earlier run was interrupted).
+    const [sections, done] = await Promise.all([prisma.homeSection.count(), prisma.setting.findUnique({ where: { key: 'setup_done' } })]);
+    if (sections === 0 && !done) {
+      const products = await prisma.product.count();
+      log.info('db_setup_loading_starter_store', { resume: products > 0 });
       const { seedDemo } = await import('./demo-seed.ts');
-      await seedDemo(false);
+      await seedDemo(false, true);
       log.info('db_setup_starter_store_loaded');
     }
+    if (!done) await prisma.setting.upsert({ where: { key: 'setup_done' }, create: { key: 'setup_done', value: { at: new Date().toISOString() } }, update: {} });
     state = 'ready';
   } catch (e) {
     state = 'failed';
-    log.error('db_setup_failed', { err: String((e as Error)?.stack ?? e) });
+    attempts++;
+    log.error('db_setup_failed', { attempt: attempts, err: String((e as Error)?.stack ?? e) });
+    // Database briefly unreachable or the server was busy: try again (every 20 s, up to ~10 minutes).
+    if (attempts < 30) setTimeout(() => void setupDatabase(), 20_000).unref();
   }
 }

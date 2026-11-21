@@ -323,9 +323,10 @@ const SAREES: {
 const CATEGORIES = ['Kanjivaram', 'Banarasi', 'Paithani', 'Chanderi', 'Linen', 'Cotton', 'Gadwal', 'Pochampally', 'Soft Silk', 'Tussar', 'Organza'];
 
 /** Loads the starter store. Skips if products exist (unless force). Returns true if it seeded. */
-export async function seedDemo(force = !!process.env.SEED_FORCE): Promise<boolean> {
+export async function seedDemo(force = !!process.env.SEED_FORCE, resume = false): Promise<boolean> {
+  // resume = first-start setup that was interrupted: finish it, replacing any half-made starter sarees.
   const existing = await prisma.product.count();
-  if (existing && !force) {
+  if (existing && !force && !resume) {
     console.log(`Database already has ${existing} products — skipping (set SEED_FORCE=1 to wipe and reseed).`);
     return false;
   }
@@ -363,6 +364,18 @@ export async function seedDemo(force = !!process.env.SEED_FORCE): Promise<boolea
   for (const [i, s] of SAREES.entries()) {
     process.stdout.write(`  · ${s.name}…`);
     const slug = s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-$/, '');
+    const old = await prisma.product.findUnique({ where: { slug }, include: { _count: { select: { images: true, colours: true } } } });
+    if (old) {
+      const complete = old._count.colours === s.colours.length && old._count.images >= s.colours.length * 2;
+      if (complete) {
+        productIds[slug] = old.id;
+        const cover = await prisma.productImage.findFirst({ where: { productId: old.id }, orderBy: { sortOrder: 'asc' } });
+        if (cover) covers[slug] = cover.url.split('#')[0];
+        console.log(' already there');
+        continue;
+      }
+      await prisma.product.delete({ where: { id: old.id } }); // half-made → rebuild
+    }
     const p = await prisma.product.create({
       data: {
         name: s.name,
@@ -436,6 +449,7 @@ export async function seedDemo(force = !!process.env.SEED_FORCE): Promise<boolea
     { title: 'Under ₹5,000', handle: 'under-5000', rules: { maxPrice: P(5000) }, accent: '#B8893B', image: coverOf('soft-silk-mayil') },
   ];
   for (const [i, c] of collections.entries()) {
+    if (await prisma.collection.findUnique({ where: { handle: c.handle } })) continue;
     await prisma.collection.create({
       data: {
         title: c.title,
@@ -452,6 +466,31 @@ export async function seedDemo(force = !!process.env.SEED_FORCE): Promise<boolea
     });
   }
 
+  const pages: [string, string, string][] = [
+    ['about', 'Our story', '<p>Tarun Silks began in 1987 as a single counter of Kanjivaram silks. Today we work directly with more than forty weaver families across India.</p><p>Every saree we sell is chosen by hand, checked thread by thread, and shipped with its certification.</p>'],
+    ['weavers', 'Our weavers', '<p>Meet the families behind the looms — from Kanchipuram to Varanasi.</p><ul><li><strong>Kanchipuram</strong> — korvai Kanjivaram silks</li><li><strong>Varanasi</strong> — kadhua Banarasi brocades</li><li><strong>Yeola</strong> — tapestry Paithani</li><li><strong>Gadwal</strong> — kuttu silk-cotton</li></ul>'],
+    ['contact', 'Contact us', '<p>WhatsApp us any time — we usually reply within the hour (10am–8pm IST).</p>'],
+    ['store-locator', 'Visit our store', '<p>Add your store address and timings in Admin → Pages.</p>'],
+    ['care-guide', 'Saree care guide', '<ul><li>Dry clean silk sarees for the first wash</li><li>Fold in muslin, never plastic</li><li>Refold along different lines every three months to protect zari</li><li>Air sarees in shade, not direct sun</li></ul>'],
+    ['shipping', 'Shipping', '<p>Free shipping on orders above ₹2,999. Most orders ship within 24 hours and arrive in 2–7 days depending on your pincode.</p>'],
+    ['returns', 'Returns & exchange', '<p>Easy 7-day returns on unused sarees with tags intact. Sarees with fall & pico or stitched blouses cannot be returned.</p>'],
+    ['privacy', 'Privacy policy', '<p>We only collect what we need to deliver your order. Replace this with your full policy text in Admin → Pages.</p>'],
+    ['terms', 'Terms of service', '<p>Replace with your terms in Admin → Pages.</p>'],
+    ['faq', 'FAQ', '<h3>Is the blouse piece included?</h3><p>Yes — every saree comes with an unstitched 0.8 m blouse piece unless stated otherwise.</p><h3>Do you offer cash on delivery?</h3><p>Yes, across most of India, for orders up to ₹15,000.</p><h3>Can you stitch my blouse?</h3><p>Choose “Add stitched blouse” on the product page and share your measurements.</p>'],
+  ];
+  for (const [slug, title, body] of pages) {
+    await prisma.page.upsert({ where: { slug }, create: { slug, title, body }, update: {} });
+  }
+
+  await prisma.coupon.upsert({
+    where: { code: 'WELCOME10' },
+    create: { code: 'WELCOME10', type: 'PERCENT', value: 10, minCart: P(2000), maxDiscount: P(1500), perUser: 1 },
+    update: {},
+  });
+  await prisma.coupon.upsert({ where: { code: 'FREESHIP' }, create: { code: 'FREESHIP', type: 'FREE_SHIPPING', value: 0 }, update: {} });
+
+
+  // Homepage last: its presence marks the starter store as fully set up.
   const home = [
     { type: 'hero', data: { eyebrow: 'Handwoven in India since 1987', line1: 'Six yards', line2: 'of poetry.', cta: 'Explore the collection', ctaLink: '/shop', secondary: 'The Wedding Edit', secondaryLink: '/collections/wedding-edit', video: '', poster: '' } },
     { type: 'marquee', data: { items: ['Kanjivaram', 'Banarasi', 'Paithani', 'Chanderi', 'Gadwal', 'Pochampally', 'Tussar', 'Linen'] } },
@@ -489,29 +528,6 @@ export async function seedDemo(force = !!process.env.SEED_FORCE): Promise<boolea
   for (const [i, h] of home.entries()) {
     await prisma.homeSection.create({ data: { type: h.type, title: h.title ?? null, data: h.data, sortOrder: i } });
   }
-
-  const pages: [string, string, string][] = [
-    ['about', 'Our story', '<p>Tarun Silks began in 1987 as a single counter of Kanjivaram silks. Today we work directly with more than forty weaver families across India.</p><p>Every saree we sell is chosen by hand, checked thread by thread, and shipped with its certification.</p>'],
-    ['weavers', 'Our weavers', '<p>Meet the families behind the looms — from Kanchipuram to Varanasi.</p><ul><li><strong>Kanchipuram</strong> — korvai Kanjivaram silks</li><li><strong>Varanasi</strong> — kadhua Banarasi brocades</li><li><strong>Yeola</strong> — tapestry Paithani</li><li><strong>Gadwal</strong> — kuttu silk-cotton</li></ul>'],
-    ['contact', 'Contact us', '<p>WhatsApp us any time — we usually reply within the hour (10am–8pm IST).</p>'],
-    ['store-locator', 'Visit our store', '<p>Add your store address and timings in Admin → Pages.</p>'],
-    ['care-guide', 'Saree care guide', '<ul><li>Dry clean silk sarees for the first wash</li><li>Fold in muslin, never plastic</li><li>Refold along different lines every three months to protect zari</li><li>Air sarees in shade, not direct sun</li></ul>'],
-    ['shipping', 'Shipping', '<p>Free shipping on orders above ₹2,999. Most orders ship within 24 hours and arrive in 2–7 days depending on your pincode.</p>'],
-    ['returns', 'Returns & exchange', '<p>Easy 7-day returns on unused sarees with tags intact. Sarees with fall & pico or stitched blouses cannot be returned.</p>'],
-    ['privacy', 'Privacy policy', '<p>We only collect what we need to deliver your order. Replace this with your full policy text in Admin → Pages.</p>'],
-    ['terms', 'Terms of service', '<p>Replace with your terms in Admin → Pages.</p>'],
-    ['faq', 'FAQ', '<h3>Is the blouse piece included?</h3><p>Yes — every saree comes with an unstitched 0.8 m blouse piece unless stated otherwise.</p><h3>Do you offer cash on delivery?</h3><p>Yes, across most of India, for orders up to ₹15,000.</p><h3>Can you stitch my blouse?</h3><p>Choose “Add stitched blouse” on the product page and share your measurements.</p>'],
-  ];
-  for (const [slug, title, body] of pages) {
-    await prisma.page.upsert({ where: { slug }, create: { slug, title, body }, update: {} });
-  }
-
-  await prisma.coupon.upsert({
-    where: { code: 'WELCOME10' },
-    create: { code: 'WELCOME10', type: 'PERCENT', value: 10, minCart: P(2000), maxDiscount: P(1500), perUser: 1 },
-    update: {},
-  });
-  await prisma.coupon.upsert({ where: { code: 'FREESHIP' }, create: { code: 'FREESHIP', type: 'FREE_SHIPPING', value: 0 }, update: {} });
 
   console.log(`Seeded ${SAREES.length} sarees, ${collections.length} collections, ${home.length} homepage sections, ${pages.length} pages.`);
   return true;

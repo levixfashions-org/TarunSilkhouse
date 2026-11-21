@@ -2,6 +2,10 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
+
+// Keep memory low on small hosting plans: no image cache, one image thread.
+sharp.cache(false);
+sharp.concurrency(1);
 import { env } from '../env.ts';
 import { badRequest } from './errors.ts';
 
