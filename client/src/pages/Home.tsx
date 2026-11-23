@@ -49,15 +49,47 @@ function TempleArches() {
   const n = imgs.length;
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
+  const prevOff = useRef<Record<string, number>>({});
+  const frontRef = useRef<HTMLElement | null>(null);
 
   // the next saree steps into the centre every few seconds
   useEffect(() => {
     if (n < 2 || paused || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const t = window.setInterval(() => {
-      if (!document.hidden) setActive((a) => (a + 1) % n);
+      // the saree on the left of the centre moves in, everything shifts one place to the right
+      if (!document.hidden) setActive((a) => (a - 1 + n) % n);
     }, TURN_MS);
     return () => window.clearInterval(t);
   }, [n, paused]);
+
+  // remember where each saree was, and give the one arriving in the centre its entrance
+  useEffect(() => {
+    const next: Record<string, number> = {};
+    imgs.forEach((c, i) => {
+      let d = (i - active + n) % n;
+      if (d > n / 2) d -= n;
+      next[c.handle] = d;
+    });
+    const firstRun = Object.keys(prevOff.current).length === 0;
+    prevOff.current = next;
+    const el = frontRef.current;
+    if (firstRun || !el || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    el.animate(
+      [
+        { transform: 'translateY(0) scale(1)', filter: 'brightness(.85) drop-shadow(0 0 0 rgba(242,215,155,0))' },
+        { transform: 'translateY(-14px) scale(1.035)', filter: 'brightness(1.12) drop-shadow(0 0 38px rgba(242,215,155,.55))', offset: 0.55 },
+        { transform: 'translateY(0) scale(1)', filter: 'brightness(1) drop-shadow(0 0 0 rgba(242,215,155,0))' },
+      ],
+      { duration: 1500, easing: 'cubic-bezier(.22,1,.36,1)' },
+    );
+    const sheen = el.querySelector<HTMLElement>('[data-sheen]');
+    sheen?.animate([{ transform: 'translateX(-120%)', opacity: 0 }, { opacity: 1, offset: 0.3 }, { transform: 'translateX(120%)', opacity: 0 }], {
+      duration: 1400,
+      delay: 350,
+      easing: 'cubic-bezier(.45,0,.2,1)',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, n]);
 
   if (!n) return null;
   const centre = imgs[active];
@@ -84,6 +116,9 @@ function TempleArches() {
         const d = offset(i);
         const slot = SLOTS[d];
         const front = d === 0;
+        const was = prevOff.current[c.handle];
+        // a saree that wraps from one end to the other jumps instead of sliding across, then fades in
+        const wrapped = was !== undefined && Math.abs(d - was) > 2;
         const style = {
           '--x': `${slot ? slot.x : 50}%`,
           '--wm': `${slot ? slot.wm : 60}px`,
@@ -93,8 +128,9 @@ function TempleArches() {
           zIndex: slot ? slot.z : 1,
           opacity: slot ? slot.o : 0,
         } as CSSProperties;
-        const box =
-          'absolute bottom-0 block h-[var(--hm)] w-[var(--wm)] left-[calc(var(--x)_-_var(--wm)/2)] md:h-[var(--hd)] md:w-[var(--wd)] md:left-[calc(var(--x)_-_var(--wd)/2)] transition-[left,width,height,opacity,filter] duration-[1100ms] ease-silk';
+        const box = `absolute bottom-0 block h-[var(--hm)] w-[var(--wm)] left-[calc(var(--x)_-_var(--wm)/2)] md:h-[var(--hd)] md:w-[var(--wd)] md:left-[calc(var(--x)_-_var(--wd)/2)] ${
+          wrapped ? 'animate-[archIn_1.1s_.35s_cubic-bezier(.22,1,.36,1)_both]' : 'transition-[left,width,height,opacity,filter] duration-[1200ms] ease-silk'
+        }`;
         const arch = (
           <DoorArch
             url={c.image}
@@ -105,8 +141,21 @@ function TempleArches() {
           />
         );
         return front ? (
-          <Link key={c.handle} to={`/collections/${c.handle}`} data-cursor="view" data-cursor-label={c.title} className={box} style={style}>
+          <Link
+            key={c.handle}
+            ref={(el) => {
+              frontRef.current = el;
+            }}
+            to={`/collections/${c.handle}`}
+            data-cursor="view"
+            data-cursor-label={c.title}
+            className={box}
+            style={style}
+          >
             {arch}
+            <span aria-hidden className="pointer-events-none absolute inset-0 z-[5] overflow-hidden [border-radius:9999px_9999px_0_0]">
+              <span data-sheen className="absolute inset-y-0 left-0 w-full -translate-x-[120%] bg-[linear-gradient(105deg,transparent_30%,rgba(255,240,210,.45)_50%,transparent_70%)] opacity-0" />
+            </span>
           </Link>
         ) : (
           <button

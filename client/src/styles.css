@@ -479,3 +479,9 @@
     transform: none;
   }
 }
+@keyframes archIn {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.9);
+  }
+}
