@@ -1,5 +1,5 @@
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { CardSkeleton, ProductCard } from '@/components/ProductCard';
 import { Draw, Kolam, Lotus, TempleBorder } from '@/components/Ornaments';
@@ -33,82 +33,124 @@ const twoLines = (title: string | null | undefined, fallback: string[]) => {
 };
 
 /* ------------------------------------------------------------------ hero */
-/** The temple of silk: five sarees in arch doorways, the tallest in the middle, gold outlines behind it. */
+/** The temple of silk: sarees in arch doorways that take turns in the tall centre arch. */
+const SLOTS: Record<number, { x: number; wm: number; wd: number; hm: number; hd: number; z: number; o: number }> = {
+  0: { x: 50, wm: 196, wd: 360, hm: 280, hd: 520, z: 5, o: 1 },
+  [-1]: { x: 27, wm: 118, wd: 230, hm: 210, hd: 390, z: 4, o: 1 },
+  1: { x: 73, wm: 118, wd: 230, hm: 210, hd: 390, z: 4, o: 1 },
+  [-2]: { x: 10, wm: 86, wd: 170, hm: 150, hd: 280, z: 3, o: 0.8 },
+  2: { x: 90, wm: 86, wd: 170, hm: 150, hd: 280, z: 3, o: 0.8 },
+};
+const TURN_MS = 3800;
+
 function TempleArches() {
   const cols = useBoot((b) => b.boot?.collections ?? []);
   const imgs = cols.filter((c) => c.image && !c.isEditorial).slice(0, 5);
-  const box = useRef<HTMLDivElement>(null);
+  const n = imgs.length;
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  // the next saree steps into the centre every few seconds
   useEffect(() => {
-    const el = box.current;
-    if (!el || matchMedia('(hover: none)').matches || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    let raf = 0;
-    const move = (e: PointerEvent) => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const x = e.clientX / innerWidth - 0.5;
-        el.querySelectorAll<HTMLElement>('[data-depth]').forEach((n) => {
-          n.style.translate = `${x * Number(n.dataset.depth) * 26}px 0`;
-        });
-      });
-    };
-    window.addEventListener('pointermove', move, { passive: true });
-    return () => {
-      window.removeEventListener('pointermove', move);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
-  if (!imgs.length) return null;
-  const [centre, l1, r1, l2, r2] = imgs;
-  // [collection, size classes, position classes, depth, delay]
-  const side: [typeof centre | undefined, string, string, number, number][] = [
-    [l2, 'h-[150px] w-[86px] md:h-[280px] md:w-[170px] opacity-80', 'left-[1%] md:left-[3%]', 0.3, 0.5],
-    [r2, 'h-[150px] w-[86px] md:h-[280px] md:w-[170px] opacity-80', 'right-[1%] md:right-[3%]', 0.3, 0.5],
-    [l1, 'h-[210px] w-[118px] md:h-[390px] md:w-[230px]', 'left-[13%] md:left-[19%]', 0.6, 0.3],
-    [r1, 'h-[210px] w-[118px] md:h-[390px] md:w-[230px]', 'right-[13%] md:right-[19%]', 0.6, 0.3],
-  ];
+    if (n < 2 || paused || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const t = window.setInterval(() => {
+      if (!document.hidden) setActive((a) => (a + 1) % n);
+    }, TURN_MS);
+    return () => window.clearInterval(t);
+  }, [n, paused]);
+
+  if (!n) return null;
+  const centre = imgs[active];
+  // offset of each saree from the centre, wrapped so it is between -2 and 2
+  const offset = (i: number) => {
+    let d = (i - active + n) % n;
+    if (d > n / 2) d -= n;
+    return d;
+  };
+
   return (
-    <div ref={box} className="relative mx-auto mt-6 h-[300px] w-full max-w-[1200px] md:mt-8 md:h-[540px]">
+    <div
+      className="temple-rise relative mx-auto mt-6 h-[300px] w-full max-w-[1200px] md:mt-8 md:h-[540px]"
+      style={{ animationDelay: '0.2s' }}
+      onPointerEnter={() => setPaused(true)}
+      onPointerLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
       <div className="absolute bottom-0 left-1/2 h-[300px] w-[210px] -translate-x-1/2 md:h-[520px] md:w-[360px]">
         <DoorRings w="100%" h="100%" step={52} />
       </div>
-      {side.map(([c, size, pos, depth, delay]) =>
-        c ? (
-          <Link
-            key={c.handle}
-            to={`/collections/${c.handle}`}
-            tabIndex={-1}
-            aria-hidden
-            data-depth={depth}
-            className={`absolute bottom-0 block transition-[translate] duration-900 ease-silk ${pos}`}
-          >
-            <div className="temple-rise" style={{ animationDelay: `${delay + 0.4}s` }}>
-              <DoorArch url={c.image} alt="" sizes="18vw" eager className={`${size} shadow-[0_40px_80px_-24px_rgba(0,0,0,.75)] hover:[&_img]:scale-105`} />
-            </div>
+      {imgs.map((c, i) => {
+        const d = offset(i);
+        const slot = SLOTS[d];
+        const front = d === 0;
+        const style = {
+          '--x': `${slot ? slot.x : 50}%`,
+          '--wm': `${slot ? slot.wm : 60}px`,
+          '--wd': `${slot ? slot.wd : 120}px`,
+          '--hm': `${slot ? slot.hm : 100}px`,
+          '--hd': `${slot ? slot.hd : 200}px`,
+          zIndex: slot ? slot.z : 1,
+          opacity: slot ? slot.o : 0,
+        } as CSSProperties;
+        const box =
+          'absolute bottom-0 block h-[var(--hm)] w-[var(--wm)] left-[calc(var(--x)_-_var(--wm)/2)] md:h-[var(--hd)] md:w-[var(--wd)] md:left-[calc(var(--x)_-_var(--wd)/2)] transition-[left,width,height,opacity,filter] duration-[1100ms] ease-silk';
+        const arch = (
+          <DoorArch
+            url={c.image}
+            alt={front ? `${c.title} sarees` : ''}
+            sizes="(min-width:768px) 360px, 200px"
+            eager={i < 3}
+            className={`h-full w-full transition-shadow duration-[1100ms] ${front ? 'shadow-[0_60px_120px_-30px_rgba(0,0,0,.85),0_0_0_1px_rgba(230,194,122,.55),0_0_70px_rgba(242,215,155,.25)]' : 'shadow-[0_40px_80px_-24px_rgba(0,0,0,.75)] brightness-[.82]'} hover:[&_img]:scale-105`}
+          />
+        );
+        return front ? (
+          <Link key={c.handle} to={`/collections/${c.handle}`} data-cursor="view" data-cursor-label={c.title} className={box} style={style}>
+            {arch}
           </Link>
-        ) : null,
-      )}
+        ) : (
+          <button
+            key={c.handle}
+            type="button"
+            onClick={() => setActive(i)}
+            aria-label={`Show ${c.title}`}
+            tabIndex={slot ? 0 : -1}
+            className={`${box} cursor-pointer`}
+            style={style}
+          >
+            {arch}
+          </button>
+        );
+      })}
       <Link
         to={`/collections/${centre.handle}`}
-        data-depth={1}
-        data-cursor="view"
-        data-cursor-label={centre.title}
-        className="absolute bottom-0 left-1/2 block -translate-x-1/2 transition-[translate] duration-900 ease-silk"
+        className="absolute bottom-[18%] left-[calc(50%+130px)] z-[6] hidden items-center gap-3 whitespace-nowrap rounded-full border border-[#E6C27A]/40 bg-[#1B0A0E]/65 py-2.5 pl-2.5 pr-5 text-left text-[13px] backdrop-blur-md lg:flex"
       >
-        <div className="temple-rise" style={{ animationDelay: '0.2s' }}>
-        <DoorArch url={centre.image} alt={`${centre.title} sarees`} sizes="(min-width:768px) 360px, 210px" eager className="h-[280px] w-[196px] shadow-[0_60px_120px_-30px_rgba(0,0,0,.85),0_0_0_1px_rgba(230,194,122,.4)] md:h-[520px] md:w-[360px] hover:[&_img]:scale-105" />
-        </div>
-        <span className="absolute bottom-[22%] left-[78%] hidden items-center gap-3 whitespace-nowrap rounded-full border border-[#E6C27A]/40 bg-[#1B0A0E]/60 py-2.5 pl-2.5 pr-5 text-left text-[13px] backdrop-blur-md lg:flex">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E6C27A] text-[#1B0A0E]">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
-          </span>
-          <span>
-            <span className="block font-serif text-[18px] leading-tight">{centre.title}</span>
-            <span className="text-[#FBF7F0]/65">Explore the weave</span>
-          </span>
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E6C27A] text-[#1B0A0E]">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </span>
+        <span key={centre.handle} className="animate-[fadeUp_.7s_cubic-bezier(.22,1,.36,1)_both]">
+          <span className="block font-serif text-[18px] leading-tight">{centre.title}</span>
+          <span className="text-[#FBF7F0]/65">Explore the weave</span>
         </span>
       </Link>
+      {n > 1 && (
+        <div className="absolute -bottom-9 left-1/2 z-[6] flex -translate-x-1/2 gap-2" role="tablist" aria-label="Sarees">
+          {imgs.map((c, i) => (
+            <button
+              key={c.handle}
+              type="button"
+              role="tab"
+              aria-selected={i === active}
+              aria-label={c.title}
+              onClick={() => setActive(i)}
+              className={`h-1.5 rounded-full transition-all duration-700 ${i === active ? 'w-8 bg-[#E6C27A]' : 'w-1.5 bg-[#FBF7F0]/35 hover:bg-[#FBF7F0]/70'}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -142,7 +184,7 @@ function Hero({ sec }: { sec: HomeSection }) {
           </span>
         </h1>
         <TempleArches />
-        <div className="page-x mt-9 flex flex-col items-center gap-x-7 gap-y-4 opacity-0 transition-opacity delay-1000 duration-1200 sm:flex-row sm:justify-center md:mt-11 [.is-in_&]:opacity-100">
+        <div className="page-x mt-16 flex flex-col items-center gap-x-7 gap-y-4 opacity-0 transition-opacity delay-1000 duration-1200 sm:flex-row sm:justify-center md:mt-11 [.is-in_&]:opacity-100">
           <Magnetic>
             <Link to={s(d.ctaLink, '/shop')} className="btn-gold min-h-[56px] w-full px-9 text-[16px] sm:w-auto" data-cursor="view" data-cursor-label="Enter">
               {s(d.cta, 'Explore the collection')}
