@@ -102,13 +102,31 @@ function TempleArches() {
 
   return (
     <div
-      className="temple-rise relative mx-auto mt-6 h-[300px] w-full max-w-[1200px] md:mt-8 md:h-[540px]"
+      className="temple-rise w-full"
       style={{ animationDelay: '0.2s' }}
       onPointerEnter={() => setPaused(true)}
       onPointerLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
     >
+      {/* the name of the collection in the centre arch */}
+      <div className="relative z-[6] mt-4 flex items-center justify-center gap-4 md:mt-6" aria-live="polite">
+        <span aria-hidden className="h-px w-10 bg-gradient-to-r from-transparent to-[#E6C27A] md:w-20" />
+        <span aria-hidden className="h-1.5 w-1.5 rotate-45 bg-[#E6C27A]" />
+        <Link
+          key={centre.handle}
+          to={`/collections/${centre.handle}`}
+          className="group animate-[fadeUp_.8s_cubic-bezier(.22,1,.36,1)_both] text-center"
+        >
+          <span className="block font-serif text-[clamp(1.7rem,3.2vw,2.75rem)] italic leading-tight text-[#E6C27A] transition-colors group-hover:text-[#FBF7F0]">{centre.title}</span>
+          <span className="mt-0.5 block text-[12px] text-[#FBF7F0]/65 transition-colors group-hover:text-[#E6C27A] md:text-[13px]">
+            Explore the collection
+          </span>
+        </Link>
+        <span aria-hidden className="h-1.5 w-1.5 rotate-45 bg-[#E6C27A]" />
+        <span aria-hidden className="h-px w-10 bg-gradient-to-l from-transparent to-[#E6C27A] md:w-20" />
+      </div>
+      <div className="relative mx-auto mt-4 h-[300px] w-full max-w-[1200px] md:mt-6 md:h-[540px]">
       <div className="absolute bottom-0 left-1/2 h-[300px] w-[210px] -translate-x-1/2 md:h-[520px] md:w-[360px]">
         <DoorRings w="100%" h="100%" step={52} />
       </div>
@@ -163,6 +181,7 @@ function TempleArches() {
             type="button"
             onClick={() => setActive(i)}
             aria-label={`Show ${c.title}`}
+            title={c.title}
             tabIndex={slot ? 0 : -1}
             className={`${box} cursor-pointer`}
             style={style}
@@ -171,20 +190,6 @@ function TempleArches() {
           </button>
         );
       })}
-      <Link
-        to={`/collections/${centre.handle}`}
-        className="absolute bottom-[18%] left-[calc(50%+130px)] z-[6] hidden items-center gap-3 whitespace-nowrap rounded-full border border-[#E6C27A]/40 bg-[#1B0A0E]/65 py-2.5 pl-2.5 pr-5 text-left text-[13px] backdrop-blur-md lg:flex"
-      >
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E6C27A] text-[#1B0A0E]">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-            <path d="M5 12h14M13 6l6 6-6 6" />
-          </svg>
-        </span>
-        <span key={centre.handle} className="animate-[fadeUp_.7s_cubic-bezier(.22,1,.36,1)_both]">
-          <span className="block font-serif text-[18px] leading-tight">{centre.title}</span>
-          <span className="text-[#FBF7F0]/65">Explore the weave</span>
-        </span>
-      </Link>
       {n > 1 && (
         <div className="absolute -bottom-9 left-1/2 z-[6] flex -translate-x-1/2 gap-2" role="tablist" aria-label="Sarees">
           {imgs.map((c, i) => (
@@ -200,6 +205,7 @@ function TempleArches() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }
