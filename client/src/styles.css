@@ -485,3 +485,45 @@
     transform: translateY(40px) scale(0.9);
   }
 }
+/* hanging sarees: sway on their rings when hovered */
+@keyframes sway {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(1.6deg);
+  }
+  55% {
+    transform: rotate(-1.1deg);
+  }
+  80% {
+    transform: rotate(0.5deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+@keyframes tag-swing {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  30% {
+    transform: rotate(-7deg);
+  }
+  65% {
+    transform: rotate(4deg);
+  }
+}
+.group:hover .hang-cloth {
+  animation: sway 2.2s cubic-bezier(0.45, 0, 0.55, 1);
+}
+.group:hover .hang-tag {
+  animation: tag-swing 1.8s cubic-bezier(0.45, 0, 0.55, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .group:hover .hang-cloth,
+  .group:hover .hang-tag {
+    animation: none;
+  }
+}

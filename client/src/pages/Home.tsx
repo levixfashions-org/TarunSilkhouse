@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { CardSkeleton, ProductCard } from '@/components/ProductCard';
 import { Draw, Kolam, Lotus, TempleBorder } from '@/components/Ornaments';
-import { DoorArch, DoorRings } from '@/components/Arch';
+import { DoorArch, DoorRings, HangingSaree } from '@/components/Arch';
 import { EASE, Framed, Magnetic, Reveal } from '@/components/ui';
 import { cached, post } from '@/lib/api';
 import { useInView, useReveal, useSeo } from '@/lib/hooks';
@@ -329,28 +329,32 @@ function Collections({ sec }: { sec: HomeSection }) {
   const handles = s<string[]>(sec.data.handles, []);
   const cols = handles.map((h) => boot?.collections.find((c) => c.handle === h)).filter(Boolean) as NonNullable<typeof boot>['collections'];
   const shown = cols.slice(0, 6);
-  // outer arches shorter, middle ones tallest — like a temple skyline
-  const heights = shown.length === 6 ? ['md:h-[420px]', 'md:h-[470px]', 'md:h-[520px]', 'md:h-[520px]', 'md:h-[470px]', 'md:h-[420px]'] : shown.map(() => 'md:h-[480px]');
+  // sarees hang at different lengths, like a shop display
+  const lengths = ['430px', '500px', '460px', '520px', '440px', '490px'];
   return (
-    <section className="grain relative overflow-hidden bg-[#1B1612] py-20 text-[#FBF7F0] md:py-32">
-      <div className="page-x mb-10 flex items-end justify-between gap-6 md:mb-16">
+    <section className="grain relative overflow-hidden bg-[radial-gradient(ellipse_70%_60%_at_50%_30%,#3A0F18,#1B1612_70%)] py-20 text-[#FBF7F0] md:py-32">
+      <div className="page-x mb-12 flex items-end justify-between gap-6 md:mb-20">
         <Reveal lines={twoLines(sec.title, ['Eight looms.', 'One obsession.'])} italicLast className="font-serif text-[clamp(2.9rem,6.8vw,6rem)] leading-[0.9] tracking-[-0.02em] [&_.italic]:text-[#E6C27A]" />
         <Link to="/shop" className="hidden shrink-0 border-b border-[#B8893B] pb-1 text-[16px] md:block">
           Shop every fabric
         </Link>
       </div>
-      <div className="no-scrollbar flex snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 md:mx-auto md:grid md:max-w-page md:items-end md:gap-[22px] md:overflow-visible md:px-10" style={{ gridTemplateColumns: `repeat(${Math.max(1, shown.length)}, minmax(0, 1fr))` }}>
-        {shown.map((c, i) => (
-          <Link key={c.handle} to={`/collections/${c.handle}`} className="group block w-[58vw] shrink-0 snap-start sm:w-[36vw] md:w-auto" data-cursor="view" data-cursor-label="Open">
-            <DoorArch url={c.image} alt={`${c.title} sarees`} sizes="(min-width:768px) 16vw, 58vw" className={`h-[340px] shadow-[0_30px_60px_-24px_rgba(0,0,0,.8)] group-hover:[&_img]:scale-105 ${heights[i]}`}>
-              <span className="pointer-events-none absolute bottom-0 left-0 z-[2] h-[55%] w-full bg-gradient-to-t from-[#1B0A0E]/90 to-transparent" />
-              <span className="absolute bottom-6 left-0 z-[4] w-full text-center">
-                <span className="block font-serif text-[clamp(1.6rem,2.1vw,1.9rem)] italic leading-tight">{c.title}</span>
-                <span className="mt-1 block text-[12px] text-[#FBF7F0]/65 transition-colors group-hover:text-[#E6C27A]">Explore</span>
-              </span>
-            </DoorArch>
-          </Link>
-        ))}
+      <div className="relative md:mx-auto md:max-w-page md:px-10">
+        {/* the gold rod the sarees hang from */}
+        <div aria-hidden className="absolute left-0 right-0 top-[10px] z-[2] mx-5 h-[7px] rounded-full bg-[linear-gradient(180deg,#F2D79B,#B8893B_55%,#7A5518)] shadow-[0_6px_14px_-4px_rgba(0,0,0,.7)] md:mx-6">
+          <span className="absolute -left-2 -top-[7px] h-[21px] w-[21px] rounded-full bg-[radial-gradient(circle_at_35%_30%,#FFF1C9,#B8893B_60%,#7A5518)]" />
+          <span className="absolute -right-2 -top-[7px] h-[21px] w-[21px] rounded-full bg-[radial-gradient(circle_at_35%_30%,#FFF1C9,#B8893B_60%,#7A5518)]" />
+        </div>
+        <div
+          className="no-scrollbar relative z-[3] flex snap-x snap-mandatory scroll-px-5 items-start gap-6 overflow-x-auto px-8 pb-6 md:grid md:gap-8 md:overflow-visible md:px-6"
+          style={{ gridTemplateColumns: `repeat(${Math.max(1, shown.length)}, minmax(0, 1fr))` }}
+        >
+          {shown.map((c, i) => (
+            <Link key={c.handle} to={`/collections/${c.handle}`} className="group block w-[52vw] shrink-0 snap-start sm:w-[34vw] md:w-auto" data-cursor="view" data-cursor-label="Open">
+              <HangingSaree url={c.image} title={c.title} length={lengths[i % lengths.length]} sizes="(min-width:768px) 16vw, 52vw" />
+            </Link>
+          ))}
+        </div>
       </div>
       {cols.length > 6 && (
         <div className="page-x mt-10 flex flex-wrap justify-center gap-3">
