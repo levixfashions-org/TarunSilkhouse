@@ -224,11 +224,11 @@ function Hero({ sec }: { sec: HomeSection }) {
 
       <div ref={textRef} className="relative flex flex-col items-center pb-[86px] pt-[calc(var(--header-h)+28px)] text-center md:pb-[96px] md:pt-[calc(var(--header-h)+48px)]">
         <p className="page-x mb-3 text-[13px] text-[#FBF7F0]/75 opacity-0 transition-opacity delay-700 duration-1200 md:mb-4 md:text-[15px] [.is-in_&]:opacity-100">{s(d.eyebrow, '')}</p>
-        <h1 className="page-x font-serif text-[clamp(3.6rem,9.4vw,8.4rem)] leading-[0.86] tracking-[-0.025em]">
-          <span className="mask-line">
+        <h1 className="page-x whitespace-nowrap font-serif text-[clamp(2rem,6.4vw,5.6rem)] leading-[1.05] tracking-[-0.02em]">
+          <span className="mask-line !inline-block align-bottom">
             <span>{s(d.line1, 'Six yards')}</span>
-          </span>
-          <span className="mask-line">
+          </span>{' '}
+          <span className="mask-line !inline-block align-bottom">
             <span className="italic text-[#E6C27A]">{s(d.line2, 'of poetry.')}</span>
           </span>
         </h1>
