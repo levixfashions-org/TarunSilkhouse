@@ -56,6 +56,11 @@ if (!parsed.success) {
 export const env = parsed.data;
 export const isProd = env.NODE_ENV === 'production';
 export const devAuthBypass = !isProd && env.DEV_AUTH_BYPASS;
-export const adminEmails = env.ADMIN_EMAILS.split(',')
-  .map((e) => e.trim().toLowerCase())
-  .filter(Boolean);
+// Forgiving about how the list is typed in a hosting panel: commas, semicolons or spaces between
+// emails, and stray quotes or <angle brackets> around them are all ignored.
+export const adminEmails = env.ADMIN_EMAILS.split(/[\s,;]+/)
+  .map((e) => e.replace(/[<>"'`]/g, '').trim().toLowerCase())
+  .filter((e) => e.includes('@'));
+if (isProd && adminEmails.length === 0) {
+  console.warn('[auth] ADMIN_EMAILS is empty or has no valid email — only people added under Team can open /admin.');
+}
